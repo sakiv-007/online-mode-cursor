@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Redirect Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Redirect Flow</h1>
+    <p>This page tests different ways to access the waiting room</p>
+    
+    <div class="test-section">
+        <h2>Test 1: Direct URL Access</h2>
+        <p>This test tries to access the waiting room URL directly</p>
+        <div>
+            <label for="roomId1">Room ID:</label>
+            <input type="text" id="roomId1" value="test123">
+        </div>
+        <button id="test1Button">Go to Waiting Room Directly</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Session Storage + URL</h2>
+        <p>This test sets the session storage first, then navigates</p>
+        <div>
+            <label for="roomId2">Room ID:</label>
+            <input type="text" id="roomId2" value="test456">
+        </div>
+        <div>
+            <label for="playerName2">Player Name:</label>
+            <input type="text" id="playerName2" value="TestPlayer">
+        </div>
+        <button id="test2Button">Set Session Storage + Navigate</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Socket.io Event Simulation</h2>
+        <p>This test tries to simulate the socket.io event flow</p>
+        <div>
+            <label for="roomId3">Room ID:</label>
+            <input type="text" id="roomId3" value="test789">
+        </div>
+        <div>
+            <label for="playerName3">Player Name:</label>
+            <input type="text" id="playerName3" value="TestPlayer">
+        </div>
+        <button id="test3Button">Simulate Socket Event</button>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Test 1: Direct URL
+        document.getElementById('test1Button').addEventListener('click', function() {
+            const roomId = document.getElementById('roomId1').value;
+            console.log(`Test 1: Redirecting to waiting room directly: /waiting/${roomId}`);
+            window.location.href = `/waiting/${roomId}`;
+        });
+        
+        // Test 2: Session Storage + URL
+        document.getElementById('test2Button').addEventListener('click', function() {
+            const roomId = document.getElementById('roomId2').value;
+            const playerName = document.getElementById('playerName2').value;
+            
+            // Set session storage
+            sessionStorage.setItem('roomId', roomId);
+            sessionStorage.setItem('playerName', playerName);
+            sessionStorage.setItem('playerSymbol', 'X');
+            sessionStorage.setItem('isHost', 'true');
+            
+            console.log(`Test 2: Set session storage and redirecting to: /waiting/${roomId}`);
+            console.log('Session storage:', {
+                roomId: sessionStorage.getItem('roomId'),
+                playerName: sessionStorage.getItem('playerName'),
+                playerSymbol: sessionStorage.getItem('playerSymbol'),
+                isHost: sessionStorage.getItem('isHost')
+            });
+            
+            window.location.href = `/waiting/${roomId}`;
+        });
+        
+        // Test 3: Socket.io Event Simulation
+        document.getElementById('test3Button').addEventListener('click', function() {
+            const socket = io();
+            const roomId = document.getElementById('roomId3').value;
+            const playerName = document.getElementById('playerName3').value;
+            
+            console.log(`Test 3: Creating room ${roomId} for player ${playerName}`);
+            
+            // Emit create room event
+            socket.emit('createRoom', playerName);
+            
+            // Listen for room created event
+            socket.on('roomCreated', (data) => {
+                console.log('Room created event received:', data);
+                
+                // Store player info in sessionStorage
+                sessionStorage.setItem('playerName', playerName);
+                sessionStorage.setItem('roomId', data.roomId);
+                sessionStorage.setItem('playerSymbol', data.playerSymbol);
+                
+                if (data.isHost) {
+                    sessionStorage.setItem('isHost', 'true');
+                }
+                
+                // Redirect based on data
+                if (data.waitingRoom) {
+                    console.log(`Redirecting to waiting room: /waiting/${data.roomId}`);
+                    window.location.href = `/waiting/${data.roomId}`;
+                } else {
+                    console.log(`Redirecting to game: /game/${data.roomId}`);
+                    window.location.href = `/game/${data.roomId}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

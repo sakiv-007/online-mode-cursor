@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="/assets/fevicon.png" type="image/x-icon">
+    <!-- Add Font Awesome for the home icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .room-info {
+            background: rgba(30, 30, 46, 0.5);
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .room-code {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .code-value {
+            background: rgba(18, 18, 18, 0.7);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .invite-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .invite-btn:hover {
+            background: #9575cd;
+        }
+        
+        .connection-status {
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .status-connected {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success-color);
+        }
+        
+        .status-waiting {
+            background: rgba(255, 171, 0, 0.2);
+            color: var(--warning-color);
+        }
+        
+        .status-disconnected {
+            background: rgba(255, 82, 82, 0.2);
+            color: var(--danger-color);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 0.75rem 1rem;
+            background: rgba(30, 30, 46, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            max-width: 300px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification-icon {
+            font-size: 1.2rem;
+        }
+        
+        .notification-info .notification-icon {
+            color: var(--secondary-color);
+        }
+        
+        .notification-success .notification-icon {
+            color: var(--success-color);
+        }
+        
+        .notification-warning .notification-icon {
+            color: var(--warning-color);
+        }
+        
+        .notification-danger .notification-icon {
+            color: var(--danger-color);
+        }
+        
+        .notification-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        
+        .cell.x {
+            color: #4284f5 !important;
+            text-shadow: 0 0 10px rgba(66, 132, 245, 0.8) !important;
+        }
+        
+        .cell.o {
+            color: #4ade80 !important;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.8) !important;
+        }
+        
+        .cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            border-color: #7e57c2;
+            background: rgba(40, 40, 60, 0.9) !important;
+        }
+        
+        .winning-line {
+            position: absolute;
+            height: 5px;
+            transform-origin: left center;
+            width: 0;
+            transition: width 0.5s ease-in-out;
+            border-radius: 2.5px;
+            z-index: 5;
+        }
+        
+        .x-winning-line {
+            background: #4284f5 !important;
+            box-shadow: 0 0 10px rgba(66, 132, 245, 0.8) !important;
+        }
+        
+        .o-winning-line {
+            background: #4ade80 !important;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.8) !important;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="home-btn" title="Back to Lobby">
+        <i class="fas fa-home"></i>
+    </a>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        
+        <div class="room-info">
+            <div class="room-code">
+                <span>Room:</span>
+                <span id="roomIdDisplay" class="code-value"></span>
+                <button id="copyRoomId" class="invite-btn">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+            <div id="connectionStatus" class="connection-status status-waiting">
+                <i class="fas fa-circle"></i>
+                <span>Waiting for opponent...</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Connecting to server...</div>
+        
+        <div class="game-board" id="board">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+        </div>
+        
+        <button id="restartButton">Restart Game</button>
+        
+        <div class="score-board">
+            <div class="score">
+                <span id="playerXLabel">Player 1 X:</span>
+                <span id="scoreX">0</span>
+            </div>
+            <div class="score">
+                <span id="playerOLabel">Player 2 O:</span>
+                <span id="scoreO">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Congratulations Popup -->
+    <div id="congratsPopup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn">&times;</span>
+            <h2>Congratulations!</h2>
+            <p id="winnerMessage"></p>
+            <div class="confetti"></div>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <i id="notificationIcon" class="notification-icon fas fa-info-circle"></i>
+        <span id="notificationText" class="notification-text"></span>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Connect to Socket.io server
+            const socket = io();
+            
+            // Game variables
+            let gameActive = false;
+            let currentPlayer = "X";
+            let gameState = ["", "", "", "", "", "", "", "", ""];
+            let playerSymbol = '';
+            let roomId = '';
+            let playerName = '';
+            let opponentName = '';
+            let scores = { X: 0, O: 0 };
+            
+            // DOM elements
+            const statusDisplay = document.getElementById('status');
+            const cells = document.querySelectorAll('.cell');
+            const restartButton = document.getElementById('restartButton');
+            const roomIdDisplay = document.getElementById('roomIdDisplay');
+            const copyRoomIdBtn = document.getElementById('copyRoomId');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const scoreXDisplay = document.getElementById('scoreX');
+            const scoreODisplay = document.getElementById('scoreO');
+            const playerXLabel = document.getElementById('playerXLabel');
+            const playerOLabel = document.getElementById('playerOLabel');
+            const congratsPopup = document.getElementById('congratsPopup');
+            const winnerMessage = document.getElementById('winnerMessage');
+            const closeBtn = document.querySelector('.close-btn');
+            const board = document.getElementById('board');
+            const notification = document.getElementById('notification');
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationText = document.getElementById('notificationText');
+            
+            // Get player info from sessionStorage
+            playerName = sessionStorage.getItem('playerName') || 'Player';
+            roomId = sessionStorage.getItem('roomId') || '';
+            playerSymbol = sessionStorage.getItem('playerSymbol') || '';
+            
+            // Get room ID from URL if not in sessionStorage
+            if (!roomId) {
+                const pathParts = window.location.pathname.split('/');
+                roomId = pathParts[pathParts.length - 1];
+                sessionStorage.setItem('roomId', roomId);
+            }
+            
+            // Display room ID
+            roomIdDisplay.textContent = roomId;
+            
+            // Initially disable cell clicks until game starts
+            disableCellClicks();
+            
+            // Event listeners for cells
+            cells.forEach(cell => {
+                cell.addEventListener('click', () => handleCellClick(cell));
+            });
+            
+            // Restart button event listener
+            restartButton.addEventListener('click', () => {
+                socket.emit('restartGame', roomId);
+            });
+            
+            // Copy room ID button
+            copyRoomIdBtn.addEventListener('click', () => {
+                const gameUrl = `${window.location.origin}/game/${roomId}`;
+                navigator.clipboard.writeText(gameUrl)
+                    .then(() => {
+                        showNotification('success', 'Game link copied!');
+                        copyRoomIdBtn.innerHTML = '<i class="fas fa-check"></i> Copied';
+                        setTimeout(() => {
+                            copyRoomIdBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+            });
+            
+            // Close congratulations popup
+            closeBtn.addEventListener('click', () => {
+                congratsPopup.style.display = 'none';
+            });
+            
+            // Socket.io event handlers
+            
+            // Join room if not created by this player
+            if (playerSymbol !== 'X') {
+                socket.emit('joinRoom', { roomId, playerName });
+            } else {
+                // Reconnect to room if already created
+                socket.emit('createRoom', playerName);
+                updateConnectionStatus('waiting');
+                statusDisplay.innerHTML = `Waiting for opponent to join...`;
+            }
+            
+            // Player joined event
+            socket.on('playerJoined', ({ player }) => {
+                opponentName = player.name;
+                updateConnectionStatus('connected');
+                
+                // Update player labels with names
+                updatePlayerLabels();
+                
+                showNotification('success', `${opponentName} joined the game!`);
+                
+                // Enable gameplay
+                enableCellClicks();
+                gameActive = true;
+                
+                updateStatusDisplay();
+            });
+            
+            // Room joined event
+            socket.on('roomJoined', (data) => {
+                playerSymbol = data.playerSymbol;
+                gameState = data.gameState;
+                currentPlayer = data.currentPlayer;
+                scores = data.scores;
+                
+                // Get opponent name
+                const opponent = data.players.find(p => p.symbol !== playerSymbol);
+                if (opponent) {
+                    opponentName = opponent.name;
+                }
+                
+                // Update connection status
+                updateConnectionStatus('connected');
+                
+                // Update player labels
+                updatePlayerLabels();
+                
+                // Update score display
+                updateScoreDisplay();
+                
+                // Update board display
+                updateBoardDisplay();
+                
+                // Enable gameplay if it's player's turn
+                if (currentPlayer === playerSymbol) {
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
+                
+                gameActive = true;
+                
+                updateStatusDisplay();
+            });
+            
+            // Player left event
+            socket.on('playerLeft', ({ playerName }) => {
+                updateConnectionStatus('waiting');
+                showNotification('warning', `${playerName} left the game`);
+                
+                // Disable gameplay
+                disableCellClicks();
+                gameActive = false;
+                
+                statusDisplay.innerHTML = 'Waiting for opponent to join...';
+            });
+            
+            // Move made event
+            socket.on('moveMade', ({ cellIndex, symbol, gameState: newGameState }) => {
+                // Update game state
+                gameState = newGameState;
+                
+                // Update the cell display
+                cells[cellIndex].innerHTML = symbol;
+                cells[cellIndex].classList.add(symbol.toLowerCase());
+                
+                // If it's now this player's turn, enable cell clicks
+                if (currentPlayer !== playerSymbol && symbol !== playerSymbol) {
+                    enableCellClicks();
+                }
+            });
+            
+            // Player turn changed event
+            socket.on('playerTurnChanged', ({ currentPlayer: newCurrentPlayer }) => {
+                currentPlayer = newCurrentPlayer;
+                
+                updateStatusDisplay();
+                
+                // Enable/disable cell clicks based on whose turn it is
+                if (currentPlayer === playerSymbol) {
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
+            });
+            
+            // Game over event
+            socket.on('gameOver', (data) => {
+                gameActive = false;
+                disableCellClicks();
+                
+                // Update scores
+                scores = data.scores;
+                updateScoreDisplay();
+                
+                if (data.draw) {
+                    statusDisplay.innerHTML = 'Game ended in a draw!';
+                } else {
+                    // Highlight winning cells
+                    data.winningCombination.forEach(index => {
+                        cells[index].classList.add('winning-cell');
+                    });
+                    
+                    // Draw line over winning cells
+                    drawWinningLine(data.winningCombination);
+                    
+                    // Show winner message
+                    const winnerSymbol = data.winner;
+                    const isPlayerWinner = winnerSymbol === playerSymbol;
+                    
+                    if (isPlayerWinner) {
+                        statusDisplay.innerHTML = 'You won the game!';
+                        showCongratsPopup('You');
+                    } else {
+                        statusDisplay.innerHTML = `${opponentName} won the game!`;
+                    }
+                }
+            });
+            
+            // Game restarted event
+            socket.on('gameRestarted', ({ gameState: newGameState, currentPlayer: newCurrentPlayer }) => {
+                // Update game state
+                gameState = newGameState;
+                currentPlayer = newCurrentPlayer;
+                gameActive = true;
+                
+                // Clear the board
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.classList.remove('x', 'o', 'winning-cell');
+                });
+                
+                // Remove winning line if it exists
+                const existingLine = document.querySelector('.winning-line');
+                if (existingLine) {
+                    existingLine.remove();
+                }
+                
+                // Enable/disable cell clicks based on whose turn it is
+                if (currentPlayer === playerSymbol) {
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
+                
+                updateStatusDisplay();
+                
+                showNotification('info', 'Game restarted!');
+            });
+            
+            // Error event
+            socket.on('error', ({ message }) => {
+                showNotification('danger', message);
+            });
+            
+            // Handle cell click
+            function handleCellClick(cell) {
+                const cellIndex = parseInt(cell.getAttribute('data-cell-index'));
+                
+                if (gameState[cellIndex] !== '' || !gameActive || currentPlayer !== playerSymbol) {
+                    return;
+                }
+                
+                // Emit move to server
+                socket.emit('makeMove', { roomId, cellIndex });
+                
+                // Disable clicks until opponent's move
+                disableCellClicks();
+            }
+            
+            // Update the status display
+            function updateStatusDisplay() {
+                if (currentPlayer === playerSymbol) {
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                } else {
+                    statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
+                }
+            }
+            
+            // Update connection status
+            function updateConnectionStatus(status) {
+                connectionStatus.classList.remove('status-waiting', 'status-connected', 'status-disconnected');
+                
+                if (status === 'connected') {
+                    connectionStatus.classList.add('status-connected');
+                    connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                } else if (status === 'waiting') {
+                    connectionStatus.classList.add('status-waiting');
+                    connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Waiting for opponent...';
+                } else {
+                    connectionStatus.classList.add('status-disconnected');
+                    connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+                }
+            }
+            
+            // Update player labels
+            function updatePlayerLabels() {
+                if (playerSymbol === 'X') {
+                    playerXLabel.textContent = `You X:`;
+                    playerOLabel.textContent = `${opponentName} O:`;
+                } else {
+                    playerXLabel.textContent = `${opponentName} X:`;
+                    playerOLabel.textContent = `You O:`;
+                }
+            }
+            
+            // Update score display
+            function updateScoreDisplay() {
+                scoreXDisplay.textContent = scores.X;
+                scoreODisplay.textContent = scores.O;
+            }
+            
+            // Update board display
+            function updateBoardDisplay() {
+                gameState.forEach((symbol, index) => {
+                    if (symbol) {
+                        cells[index].innerHTML = symbol;
+                        cells[index].classList.add(symbol.toLowerCase());
+                    }
+                });
+            }
+            
+            // Enable cell clicks
+            function enableCellClicks() {
+                cells.forEach(cell => {
+                    const index = parseInt(cell.getAttribute('data-cell-index'));
+                    if (gameState[index] === '') {
+                        cell.style.cursor = 'pointer';
+                    }
+                });
+            }
+            
+            // Disable cell clicks
+            function disableCellClicks() {
+                cells.forEach(cell => {
+                    cell.style.cursor = 'not-allowed';
+                });
+            }
+            
+            // Show congratulations popup
+            function showCongratsPopup(winner) {
+                winnerMessage.textContent = `${winner} won the game!`;
+                congratsPopup.style.display = 'flex';
+            }
+            
+            // Draw winning line
+            function drawWinningLine(combination) {
+                const [a, b, c] = combination;
+                const line = document.createElement('div');
+                line.className = 'winning-line';
+                
+                // Add winner-specific class
+                if (gameState[a] === 'X') {
+                    line.classList.add('x-winning-line');
+                } else {
+                    line.classList.add('o-winning-line');
+                }
+                
+                // Get positions of first and last cell in the combination
+                const cellA = cells[a].getBoundingClientRect();
+                const cellC = cells[c].getBoundingClientRect();
+                
+                // Calculate the center points
+                const boardRect = board.getBoundingClientRect();
+                const startX = cellA.left + cellA.width / 2 - boardRect.left;
+                const startY = cellA.top + cellA.height / 2 - boardRect.top;
+                const endX = cellC.left + cellC.width / 2 - boardRect.left;
+                const endY = cellC.top + cellC.height / 2 - boardRect.top;
+                
+                // Calculate line length and angle
+                const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+                
+                // Set line position and dimensions
+                line.style.width = `${length}px`;
+                line.style.left = `${startX}px`;
+                line.style.top = `${startY}px`;
+                line.style.transform = `rotate(${angle}deg)`;
+                
+                // Add line to board
+                board.appendChild(line);
+                
+                // Animate the line growth
+                setTimeout(() => {
+                    line.style.width = `${length}px`;
+                }, 10);
+            }
+            
+            // Show notification
+            function showNotification(type, message) {
+                notification.classList.remove('notification-info', 'notification-success', 'notification-warning', 'notification-danger');
+                notification.classList.add(`notification-${type}`);
+                
+                // Set icon based on type
+                if (type === 'success') {
+                    notificationIcon.className = 'notification-icon fas fa-check-circle';
+                } else if (type === 'warning') {
+                    notificationIcon.className = 'notification-icon fas fa-exclamation-triangle';
+                } else if (type === 'danger') {
+                    notificationIcon.className = 'notification-icon fas fa-times-circle';
+                } else {
+                    notificationIcon.className = 'notification-icon fas fa-info-circle';
+                }
+                
+                notificationText.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

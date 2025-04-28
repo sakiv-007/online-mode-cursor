@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting Room - Tic-Tac-Toe Online</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="/assets/fevicon.png" type="image/x-icon">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #9575cd;
+            --accent-color: #00e676;
+            --border-color: rgba(126, 87, 194, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --danger-color: #ff5252;
+            --transition-speed: 0.2s;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .waiting-container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(30, 30, 46, 0.85);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .waiting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .waiting-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+        
+        .player-list {
+            flex: 1;
+            background: rgba(25, 25, 35, 0.5);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            background: rgba(35, 35, 50, 0.5);
+        }
+        
+        .player-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .player-symbol {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .player-host {
+            margin-left: auto;
+            background: var(--accent-color);
+            color: #121212;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .invite-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .invite-link {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        #inviteUrl {
+            flex: 1;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(18, 18, 18, 0.7);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        
+        .copy-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .copy-btn:hover {
+            background-color: #7e57c2;
+        }
+        
+        .waiting-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        
+        .start-btn {
+            background-color: var(--accent-color);
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .start-btn:hover {
+            background-color: #00c853;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .start-btn:disabled {
+            background-color: rgba(0, 230, 118, 0.3);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Special styling for host button */
+        .start-btn.is-host {
+            background: linear-gradient(45deg, var(--accent-color), #00c853);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .start-btn.is-host:not(:disabled):hover {
+            background: linear-gradient(45deg, #00c853, var(--accent-color));
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .back-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+        
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(25, 25, 35, 0.5);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            height: 300px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .chat-form {
+            display: flex;
+            padding: 0.5rem;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(18, 18, 18, 0.7);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .chat-send-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chat-send-btn:hover {
+            background-color: #7e57c2;
+        }
+        
+        .chat-message {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            max-width: 80%;
+            word-break: break-word;
+        }
+        
+        .system-message {
+            align-self: center;
+            background: rgba(126, 87, 194, 0.3);
+            color: var(--text-secondary);
+            font-style: italic;
+            max-width: 90%;
+            padding: 0.3rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .self-message {
+            align-self: flex-end;
+            background: var(--primary-color);
+            color: var(--text-primary);
+        }
+        
+        .other-message {
+            align-self: flex-start;
+            background: rgba(50, 50, 70, 0.8);
+            color: var(--text-primary);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            font-size: 0.8rem;
+        }
+        
+        .message-name {
+            font-weight: bold;
+        }
+        
+        .message-time {
+            color: var(--text-secondary);
+        }
+        
+        /* Player badge styles */
+        .player-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-right: 0.3rem;
+        }
+        
+        .player-x-badge {
+            background: rgba(66, 165, 245, 0.2);
+            color: #42a5f5;
+        }
+        
+        .player-o-badge {
+            background: rgba(239, 83, 80, 0.2);
+            color: #ef5350;
+        }
+        
+        .spectator-badge {
+            background: rgba(156, 39, 176, 0.2);
+            color: #9c27b0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            max-width: 400px;
+            transform: translateX(420px);
+            transition: transform 0.3s ease-out;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification-success {
+            background-color: rgba(46, 125, 50, 0.95);
+        }
+        
+        .notification-info {
+            background-color: rgba(2, 119, 189, 0.95);
+        }
+        
+        .notification-warning {
+            background-color: rgba(237, 108, 2, 0.95);
+        }
+        
+        .notification-danger {
+            background-color: rgba(211, 47, 47, 0.95);
+        }
+        
+        .notification-icon {
+            font-size: 1.5rem;
+        }
+        
+        .notification-text {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification" id="notification">
+        <i class="notification-icon fas fa-info-circle" id="notificationIcon"></i>
+        <span class="notification-text" id="notificationText">Notification text</span>
+    </div>
+    
+    <div class="waiting-container">
+        <div class="waiting-header">
+            <h1>Waiting Room</h1>
+            <div class="waiting-status">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span id="waitingStatus">Waiting for players...</span>
+            </div>
+        </div>
+        
+        <div class="invite-section">
+            <h3>Invite Players</h3>
+            <div class="invite-link">
+                <input type="text" id="inviteUrl" readonly>
+                <button class="copy-btn" id="copyBtn">
+                    <i class="fas fa-copy"></i>
+                    Copy
+                </button>
+            </div>
+        </div>
+        
+        <h3>Players</h3>
+        <div class="player-list" id="playerList">
+            <!-- Players will be dynamically added here -->
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Chat messages will be dynamically added here -->
+                <div class="chat-message system-message">
+                    Welcome to the waiting room! Chat with other players while you wait.
+                </div>
+            </div>
+            <form class="chat-form" id="chatForm">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+                <button type="submit" class="chat-send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+        
+        <div class="waiting-footer">
+            <button class="back-btn" id="backBtn">Back to Lobby</button>
+            <button class="start-btn" id="startBtn" disabled>Start Game</button>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Connect to Socket.io server
+        const socket = io();
+        
+        // DOM Elements
+        const waitingStatus = document.getElementById('waitingStatus');
+        const inviteUrl = document.getElementById('inviteUrl');
+        const copyBtn = document.getElementById('copyBtn');
+        const playerList = document.getElementById('playerList');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const startBtn = document.getElementById('startBtn');
+        const backBtn = document.getElementById('backBtn');
+        const notification = document.getElementById('notification');
+        const notificationIcon = document.getElementById('notificationIcon');
+        const notificationText = document.getElementById('notificationText');
+        
+        // Game data
+        let playerName = '';
+        let playerSymbol = '';
+        let roomId = '';
+        let isHost = false;
+        let participants = [];
+        
+        // Get data from session storage
+        function loadSessionData() {
+            playerName = sessionStorage.getItem('playerName') || '';
+            playerSymbol = sessionStorage.getItem('playerSymbol') || '';
+            roomId = sessionStorage.getItem('roomId') || '';
+            isHost = sessionStorage.getItem('isHost') === 'true';
+            
+            // Get room ID from URL if not in session storage
+            if (!roomId) {
+                const pathParts = window.location.pathname.split('/');
+                roomId = pathParts[pathParts.length - 1];
+                sessionStorage.setItem('roomId', roomId);
+            }
+            
+            console.log('Waiting room data loaded:', { 
+                playerName, 
+                playerSymbol, 
+                roomId, 
+                isHost, 
+                path: window.location.pathname 
+            });
+            
+            // Set invite URL
+            const fullUrl = window.location.origin + '/?room=' + roomId;
+            inviteUrl.value = fullUrl;
+            
+            // Enable start button only for host
+            if (isHost) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                console.log('User is host - enabling start button');
+                waitingStatus.textContent = 'Waiting for opponent...';
+            } else {
+                startBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+                console.log('User is not host - disabling start button');
+                waitingStatus.textContent = 'Waiting for host to start...';
+            }
+            
+            // Connect to room if we have the necessary data
+            if (playerName && roomId) {
+                joinWaitingRoom();
+            } else {
+                showNotification('danger', 'Missing player information. Redirecting to lobby...');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }
+        }
+        
+        // Join waiting room
+        function joinWaitingRoom() {
+            if (roomId && playerName) {
+                socket.emit('joinWaitingRoom', {
+                    roomId,
+                    playerName,
+                    playerSymbol,
+                    isHost
+                });
+            } else {
+                showNotification('danger', 'Missing room information. Redirecting to lobby...');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }
+        }
+        
+        // Update player list
+        function updatePlayerList() {
+            playerList.innerHTML = '';
+            
+            participants.forEach(participant => {
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-item';
+                
+                const symbolDisplay = participant.isSpectator ? 'S' : participant.symbol;
+                const symbolClass = participant.isSpectator ? 'spectator' : participant.symbol.toLowerCase();
+                
+                let html = `
+                    <div class="player-symbol ${symbolClass}-symbol">${symbolDisplay}</div>
+                    <div class="player-name">${participant.name}</div>
+                `;
+                
+                if (participant.isHost) {
+                    html += `<div class="player-host">Host</div>`;
+                }
+                
+                playerItem.innerHTML = html;
+                playerList.appendChild(playerItem);
+            });
+            
+            // Enable start button if there are at least 2 players and user is host
+            if (isHost) {
+                const players = participants.filter(p => !p.isSpectator);
+                const wasDisabled = startBtn.disabled;
+                startBtn.disabled = players.length < 2;
+                startBtn.style.opacity = players.length < 2 ? '0.5' : '1';
+                
+                if (wasDisabled !== startBtn.disabled) {
+                    console.log('Start button state changed to:', startBtn.disabled ? 'disabled' : 'enabled');
+                }
+                
+                if (players.length < 2) {
+                    waitingStatus.textContent = 'Waiting for opponent...';
+                } else {
+                    waitingStatus.textContent = 'Ready to start!';
+                }
+            }
+        }
+        
+        // Add chat message
+        function addChatMessage(messageData) {
+            const { sender, message, isSystem, timestamp, symbol } = messageData;
+            
+            const messageElement = document.createElement('div');
+            
+            if (isSystem) {
+                messageElement.className = 'chat-message system-message';
+                messageElement.textContent = message;
+            } else {
+                const isSelf = sender === playerName;
+                messageElement.className = `chat-message ${isSelf ? 'self-message' : 'other-message'}`;
+                
+                const messageTime = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                let badgeHTML = '';
+                if (symbol === 'X') {
+                    badgeHTML = '<span class="player-badge player-x-badge">X</span>';
+                } else if (symbol === 'O') {
+                    badgeHTML = '<span class="player-badge player-o-badge">O</span>';
+                } else if (symbol === 'spectator') {
+                    badgeHTML = '<span class="player-badge spectator-badge">S</span>';
+                }
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        ${badgeHTML}
+                        <span class="message-name">${sender}</span>
+                        <span class="message-time">${messageTime}</span>
+                    </div>
+                    <div class="message-content">${message}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Show notification
+        function showNotification(type, message) {
+            notification.classList.remove('notification-info', 'notification-success', 'notification-warning', 'notification-danger');
+            notification.classList.add(`notification-${type}`);
+            
+            // Set icon based on type
+            if (type === 'success') {
+                notificationIcon.className = 'notification-icon fas fa-check-circle';
+            } else if (type === 'warning') {
+                notificationIcon.className = 'notification-icon fas fa-exclamation-triangle';
+            } else if (type === 'danger') {
+                notificationIcon.className = 'notification-icon fas fa-times-circle';
+            } else {
+                notificationIcon.className = 'notification-icon fas fa-info-circle';
+            }
+            
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Event Listeners
+        window.addEventListener('DOMContentLoaded', loadSessionData);
+        
+        // Copy invite link
+        copyBtn.addEventListener('click', () => {
+            inviteUrl.select();
+            document.execCommand('copy');
+            
+            showNotification('success', 'Invite link copied to clipboard!');
+        });
+        
+        // Send chat message
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // Find user's symbol 
+            const participant = participants.find(p => p.name === playerName);
+            const symbol = participant ? (participant.isSpectator ? 'spectator' : participant.symbol) : playerSymbol;
+            
+            // Emit chat message
+            socket.emit('waitingRoomMessage', {
+                roomId,
+                sender: playerName,
+                message,
+                symbol
+            });
+            
+            // Clear input
+            chatInput.value = '';
+        });
+        
+        // Back button
+        backBtn.addEventListener('click', () => {
+            // Emit leaving room
+            socket.emit('leaveWaitingRoom', { roomId, playerName });
+            
+            // Clear session storage
+            sessionStorage.removeItem('roomId');
+            sessionStorage.removeItem('playerSymbol');
+            sessionStorage.removeItem('isHost');
+            
+            // Redirect to lobby
+            window.location.href = '/';
+        });
+        
+        // Start button
+        startBtn.addEventListener('click', () => {
+            console.log('Start button clicked. Current state:', {
+                isHost,
+                disabled: startBtn.disabled,
+                opacity: startBtn.style.opacity,
+                participants
+            });
+            
+            // Extra check: if button is visually disabled, don't proceed
+            if (startBtn.disabled || startBtn.style.opacity === '0.5') {
+                console.log('Start button is disabled, ignoring click');
+                return;
+            }
+            
+            // Double check host status from participants list
+            const self = participants.find(p => p.name === playerName);
+            if (self && self.isHost) {
+                isHost = true; // Ensure local state matches
+                sessionStorage.setItem('isHost', 'true');
+            }
+            
+            if (!isHost) {
+                console.log('User is not host, cannot start game');
+                showNotification('warning', 'Only the host can start the game');
+                return;
+            }
+            
+            console.log('Emitting startGame event:', {
+                roomId,
+                playerName,
+                isHost
+            });
+            
+            // Visual feedback
+            startBtn.textContent = 'Starting...';
+            startBtn.style.backgroundColor = 'rgba(0, 230, 118, 0.7)';
+            
+            // Emit the start game event
+            socket.emit('startGame', { 
+                roomId,
+                playerName, // Add player name for verification
+                isHost: true // Explicitly send host status
+            });
+            
+            // Prevent double-clicks
+            startBtn.disabled = true;
+            setTimeout(() => {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Game';
+                startBtn.style.backgroundColor = '';
+            }, 2000);
+        });
+        
+        // Socket event handlers
+        socket.on('waitingRoomJoined', (data) => {
+            console.log('Waiting room joined:', data);
+            
+            // Update participant list
+            participants = data.participants;
+            updatePlayerList();
+            
+            // Update player symbol if needed
+            if (data.playerSymbol && (!playerSymbol || data.playerSymbol !== playerSymbol)) {
+                playerSymbol = data.playerSymbol;
+                sessionStorage.setItem('playerSymbol', playerSymbol);
+                console.log('Updated player symbol to:', playerSymbol);
+            }
+            
+            // Set isHost if server indicates this player is host
+            if (data.isHost) {
+                if (!isHost) {
+                    console.log('Server set this player as host, updating local state');
+                }
+                
+                isHost = true;
+                sessionStorage.setItem('isHost', 'true');
+                console.log('Setting user as host. isHost is now:', isHost);
+                
+                // Make start button visually indicate host status
+                startBtn.classList.add('is-host');
+                
+                // Enable start button if there are at least 2 players
+                const players = participants.filter(p => !p.isSpectator);
+                startBtn.disabled = players.length < 2;
+                startBtn.style.opacity = players.length < 2 ? '0.5' : '1';
+                console.log('Start button disabled:', startBtn.disabled, 'Players count:', players.length);
+                
+                if (players.length < 2) {
+                    waitingStatus.textContent = 'Waiting for opponent...';
+                } else {
+                    waitingStatus.textContent = 'Ready to start!';
+                }
+            } else {
+                // If the server says we're not host but we thought we were, update
+                if (isHost) {
+                    console.log('Server says this player is not host, updating local state');
+                    isHost = false;
+                    sessionStorage.setItem('isHost', 'false');
+                }
+                
+                startBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+                startBtn.classList.remove('is-host');
+                waitingStatus.textContent = 'Waiting for host to start...';
+            }
+            
+            // Check if current user is in the participant list and update UI accordingly
+            const self = participants.find(p => p.name === playerName);
+            if (self) {
+                // Update any additional data about the player
+                if (self.isHost !== isHost) {
+                    console.log('Updating host status based on participant list:', self.isHost);
+                    isHost = self.isHost;
+                    sessionStorage.setItem('isHost', isHost ? 'true' : 'false');
+                    
+                    // Update start button if needed
+                    if (isHost) {
+                        startBtn.classList.add('is-host');
+                        const players = participants.filter(p => !p.isSpectator);
+                        startBtn.disabled = players.length < 2;
+                        startBtn.style.opacity = players.length < 2 ? '0.5' : '1';
+                    } else {
+                        startBtn.disabled = true;
+                        startBtn.style.opacity = '0.5';
+                        startBtn.classList.remove('is-host');
+                    }
+                }
+            }
+            
+            // Add system message
+            addChatMessage({
+                message: `You joined the waiting room!`,
+                isSystem: true,
+                timestamp: Date.now()
+            });
+        });
+        
+        socket.on('participantJoined', (data) => {
+            console.log('Participant joined:', data);
+            
+            // Update participant list
+            participants = data.participants;
+            updatePlayerList();
+            
+            // Add system message
+            addChatMessage({
+                message: `${data.participant.name} joined the waiting room!`,
+                isSystem: true,
+                timestamp: Date.now()
+            });
+            
+            // Update status for host
+            if (isHost) {
+                const players = participants.filter(p => !p.isSpectator);
+                if (players.length >= 2) {
+                    waitingStatus.textContent = 'Ready to start!';
+                } else {
+                    waitingStatus.textContent = 'Waiting for opponent...';
+                }
+            }
+        });
+        
+        socket.on('participantLeft', (data) => {
+            console.log('Participant left:', data);
+            
+            // Update participant list
+            participants = data.participants;
+            updatePlayerList();
+            
+            // Add system message
+            addChatMessage({
+                message: `${data.participantName} left the waiting room!`,
+                isSystem: true,
+                timestamp: Date.now()
+            });
+            
+            // Update status for host
+            if (isHost) {
+                const players = participants.filter(p => !p.isSpectator);
+                startBtn.disabled = players.length < 2;
+                
+                if (players.length < 2) {
+                    waitingStatus.textContent = 'Waiting for opponent...';
+                } else {
+                    waitingStatus.textContent = 'Ready to start!';
+                }
+            }
+        });
+        
+        socket.on('waitingRoomMessage', (messageData) => {
+            console.log('Waiting room message:', messageData);
+            addChatMessage(messageData);
+        });
+        
+        socket.on('gameStarting', () => {
+            showNotification('success', 'Game is starting!');
+            
+            // Redirect to game page
+            setTimeout(() => {
+                window.location.href = `/game/${roomId}`;
+            }, 1000);
+        });
+        
+        socket.on('error', ({ message }) => {
+            showNotification('danger', message);
+            console.log('Error received:', message);
+        });
+    </script>
+</body>
+</html> 
