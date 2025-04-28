@@ -53,7 +53,7 @@
             align-items: center;
             min-height: 100vh;
             position: relative;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         
         /* Animated background */
@@ -577,9 +577,201 @@
                 width: 100%;
             }
         }
+        
+        /* Gaming background elements */
+        .gaming-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        /* Floating gaming symbols */
+        .gaming-symbol {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 3.5rem;
+            pointer-events: all;
+            animation-name: float-symbol;
+            animation-duration: var(--duration);
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-delay: var(--delay);
+            z-index: -1;
+            will-change: transform;
+            text-shadow: 0 0 20px rgba(138, 79, 255, 0.4), 0 0 30px rgba(255, 54, 171, 0.3);
+            transition: transform 0.2s, opacity 0.2s;
+            filter: brightness(1.2);
+        }
+        
+        .gaming-symbol:hover {
+            animation-play-state: paused;
+            transform: scale(2);
+            opacity: 0.7;
+            text-shadow: 0 0 25px rgba(255, 54, 171, 0.6), 0 0 40px rgba(138, 79, 255, 0.6);
+            transition: transform 0.3s, opacity 0.3s;
+            filter: brightness(1.5);
+        }
+        
+        @keyframes float-symbol {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: var(--max-opacity);
+            }
+            40% {
+                transform: translate(var(--translate-x-mid), var(--translate-y-mid)) rotate(var(--rotate-mid));
+            }
+            90% {
+                opacity: var(--max-opacity);
+            }
+            100% {
+                transform: translate(var(--translate-x), var(--translate-y)) rotate(var(--rotate));
+                opacity: 0;
+            }
+        }
+        
+        /* Pop effect for symbols */
+        @keyframes pop-effect {
+            0% {
+                transform: scale(1);
+                opacity: var(--max-opacity);
+                text-shadow: 0 0 15px rgba(126, 87, 194, 0.2);
+            }
+            30% {
+                transform: scale(2);
+                opacity: 0.75;
+                text-shadow: 0 0 40px rgba(255, 54, 171, 0.6);
+                filter: brightness(1.5);
+            }
+            60% {
+                transform: scale(2.5);
+                opacity: 0.6;
+                text-shadow: 0 0 50px rgba(0, 230, 118, 0.6), 0 0 30px rgba(138, 79, 255, 0.6);
+                filter: brightness(1.8) hue-rotate(30deg);
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+                text-shadow: 0 0 60px rgba(255, 54, 171, 0.7), 0 0 40px rgba(0, 230, 118, 0.6);
+                filter: brightness(2) hue-rotate(90deg);
+            }
+        }
+        
+        .pop {
+            animation: pop-effect 0.8s forwards !important;
+        }
+        
+        /* Grid lines effect */
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(126, 87, 194, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(126, 87, 194, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            perspective: 1000px;
+            transform: rotateX(60deg);
+            transform-origin: center 70%;
+            animation: grid-pulse 8s infinite alternate;
+        }
+        
+        @keyframes grid-pulse {
+            0% {
+                opacity: 0.2;
+                background-size: 30px 30px;
+            }
+            50% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.2;
+                background-size: 32px 32px;
+            }
+        }
+        
+        /* Particles */
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--color);
+            animation: particle-float var(--duration) linear infinite;
+            opacity: 0;
+            z-index: -1;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: var(--opacity);
+                transform: scale(1);
+            }
+            80% {
+                opacity: var(--opacity);
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(0.2);
+                opacity: 0;
+            }
+        }
+        
+        /* Energy orbs */
+        .energy-orb {
+            position: absolute;
+            width: var(--size);
+            height: var(--size);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                                        var(--color-light) 0%, 
+                                        var(--color) 50%, 
+                                        transparent 100%);
+            filter: blur(3px);
+            opacity: 0;
+            z-index: -1;
+            animation: orb-pulse var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+            box-shadow: 0 0 10px var(--color), 0 0 20px var(--color-light);
+        }
+        
+        @keyframes orb-pulse {
+            0% {
+                transform: scale(0.1);
+                opacity: 0;
+            }
+            50% {
+                opacity: var(--opacity);
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(0.1);
+                opacity: 0;
+            }
+        }
+        
+        /* Animated gradient background */
     </style>
 </head>
 <body>
+    <!-- Gaming background elements -->
+    <div class="gaming-background">
+        <div class="grid-lines"></div>
+        <!-- Gaming symbols, particles and orbs will be created by JavaScript -->
+    </div>
+
     <div class="lobby-container">
         <h1>Tic-Tac-Toe Online</h1>
         
@@ -878,6 +1070,318 @@
             roomIdInput.value = roomIdFromUrl;
             joinRoomModal.style.display = 'flex';
         }
+
+        // Initialize gaming background
+        function initGamingBackground() {
+            const gamingBackground = document.querySelector('.gaming-background');
+            
+            // Add gaming symbols
+            const symbols = ['⚔️', '🎮', '🎯', '🎲', '🏆', '👾', '🎸', '✖️', '⭕', '🎯', '♟️', '♞', '🧩', '🎪'];
+            const symbolsCount = 15;
+            
+            for (let i = 0; i < symbolsCount; i++) {
+                createSymbol(gamingBackground, symbols);
+            }
+            
+            // Set up regular symbol regeneration
+            setInterval(() => {
+                const symbolsCount = document.querySelectorAll('.gaming-symbol').length;
+                
+                // Keep a steady number of symbols around 15
+                if (symbolsCount < 15) {
+                    const numToAdd = Math.floor(Math.random() * 3) + 1; // Add 1-3 symbols
+                    for (let i = 0; i < numToAdd; i++) {
+                        createSymbol(gamingBackground, symbols);
+                    }
+                }
+                
+                // Randomly cause some symbols to pop and disappear
+                if (Math.random() > 0.6) { // 40% chance
+                    const allSymbols = document.querySelectorAll('.gaming-symbol');
+                    if (allSymbols.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * allSymbols.length);
+                        const randomSymbol = allSymbols[randomIndex];
+                        popSymbol(randomSymbol);
+                    }
+                }
+            }, 2000);
+            
+            // Add particles
+            createParticles(50);
+            
+            // Add energy orbs
+            createEnergyOrbs(6);
+        }
+        
+        // Create a new gaming symbol
+        function createSymbol(container, symbolsList) {
+            const symbol = document.createElement('div');
+            symbol.className = 'gaming-symbol';
+            symbol.textContent = symbolsList[Math.floor(Math.random() * symbolsList.length)];
+            
+            // Randomize animation properties
+            const duration = 15 + Math.random() * 25; // 15-40s
+            const delay = Math.random() * 5; // 0-5s
+            
+            // Get lobby container dimensions and position
+            const lobbyContainer = document.querySelector('.lobby-container');
+            const lobbyRect = lobbyContainer.getBoundingClientRect();
+            const lobbyCenterX = lobbyRect.left + lobbyRect.width/2;
+            const lobbyCenterY = lobbyRect.top + lobbyRect.height/2;
+            
+            // Generate positions mainly outside the central container but not at edges
+            // Define margin from edges
+            const edgeMargin = 80; // Don't place too close to window edges
+            
+            // Define starting position
+            let startX, startY;
+            
+            // Screen dimensions
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // Create positions with bias toward corners and sides
+            const positionType = Math.random();
+            
+            if (positionType < 0.65) { // 65% in the corners and sides (outside lobby area)
+                // Determine which quadrant to place in
+                const quadrant = Math.floor(Math.random() * 4);
+                
+                switch (quadrant) {
+                    case 0: // top-left
+                        startX = edgeMargin + Math.random() * (lobbyCenterX - lobbyRect.width/2 - edgeMargin * 2);
+                        startY = edgeMargin + Math.random() * (lobbyCenterY - lobbyRect.height/2 - edgeMargin * 2);
+                        break;
+                    case 1: // top-right
+                        startX = lobbyCenterX + lobbyRect.width/2 + Math.random() * (screenWidth - lobbyCenterX - lobbyRect.width/2 - edgeMargin);
+                        startY = edgeMargin + Math.random() * (lobbyCenterY - lobbyRect.height/2 - edgeMargin * 2);
+                        break;
+                    case 2: // bottom-left
+                        startX = edgeMargin + Math.random() * (lobbyCenterX - lobbyRect.width/2 - edgeMargin * 2);
+                        startY = lobbyCenterY + lobbyRect.height/2 + Math.random() * (screenHeight - lobbyCenterY - lobbyRect.height/2 - edgeMargin);
+                        break;
+                    case 3: // bottom-right
+                        startX = lobbyCenterX + lobbyRect.width/2 + Math.random() * (screenWidth - lobbyCenterX - lobbyRect.width/2 - edgeMargin);
+                        startY = lobbyCenterY + lobbyRect.height/2 + Math.random() * (screenHeight - lobbyCenterY - lobbyRect.height/2 - edgeMargin);
+                        break;
+                }
+            } else { // 35% randomly around the screen, away from edges
+                startX = edgeMargin + Math.random() * (screenWidth - edgeMargin * 2);
+                startY = edgeMargin + Math.random() * (screenHeight - edgeMargin * 2);
+                
+                // Avoid placing directly on the lobby container
+                const buffer = 30; // Extra buffer around the container
+                if (startX > lobbyRect.left - buffer && startX < lobbyRect.right + buffer &&
+                    startY > lobbyRect.top - buffer && startY < lobbyRect.bottom + buffer) {
+                    // If inside container, move it outside
+                    if (Math.random() > 0.5) {
+                        // Move horizontally
+                        if (startX < lobbyCenterX) {
+                            startX = Math.max(edgeMargin, lobbyRect.left - buffer - Math.random() * 100);
+                        } else {
+                            startX = Math.min(screenWidth - edgeMargin, lobbyRect.right + buffer + Math.random() * 100);
+                        }
+                    } else {
+                        // Move vertically
+                        if (startY < lobbyCenterY) {
+                            startY = Math.max(edgeMargin, lobbyRect.top - buffer - Math.random() * 100);
+                        } else {
+                            startY = Math.min(screenHeight - edgeMargin, lobbyRect.bottom + buffer + Math.random() * 100);
+                        }
+                    }
+                }
+            }
+            
+            // Set the end position - choose another area away from the start
+            let endX, endY;
+            
+            // Choose a destination quadrant different from start
+            const currentQuadrant = 
+                (startX < lobbyCenterX) ? 
+                    (startY < lobbyCenterY ? 0 : 2) : 
+                    (startY < lobbyCenterY ? 1 : 3);
+            
+            let destQuadrant;
+            do {
+                destQuadrant = Math.floor(Math.random() * 4);
+            } while (destQuadrant === currentQuadrant);
+            
+            // Set destination based on chosen quadrant
+            switch (destQuadrant) {
+                case 0: // top-left
+                    endX = edgeMargin + Math.random() * (lobbyCenterX - lobbyRect.width/2 - edgeMargin * 2);
+                    endY = edgeMargin + Math.random() * (lobbyCenterY - lobbyRect.height/2 - edgeMargin * 2);
+                    break;
+                case 1: // top-right
+                    endX = lobbyCenterX + lobbyRect.width/2 + Math.random() * (screenWidth - lobbyCenterX - lobbyRect.width/2 - edgeMargin);
+                    endY = edgeMargin + Math.random() * (lobbyCenterY - lobbyRect.height/2 - edgeMargin * 2);
+                    break;
+                case 2: // bottom-left
+                    endX = edgeMargin + Math.random() * (lobbyCenterX - lobbyRect.width/2 - edgeMargin * 2);
+                    endY = lobbyCenterY + lobbyRect.height/2 + Math.random() * (screenHeight - lobbyCenterY - lobbyRect.height/2 - edgeMargin);
+                    break;
+                case 3: // bottom-right
+                    endX = lobbyCenterX + lobbyRect.width/2 + Math.random() * (screenWidth - lobbyCenterX - lobbyRect.width/2 - edgeMargin);
+                    endY = lobbyCenterY + lobbyRect.height/2 + Math.random() * (screenHeight - lobbyCenterY - lobbyRect.height/2 - edgeMargin);
+                    break;
+            }
+            
+            // Calculate random midpoint for curved trajectory
+            const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 200;
+            const midY = (startY + endY) / 2 + (Math.random() - 0.5) * 200;
+            
+            // Calculate translation values relative to starting point
+            const translateXMid = midX - startX;
+            const translateYMid = midY - startY;
+            const translateX = endX - startX;
+            const translateY = endY - startY;
+            
+            // Random rotation angles
+            const rotateMid = (Math.random() - 0.5) * 180; // -90 to 90 degrees
+            const rotate = (Math.random() - 0.5) * 360; // -180 to 180 degrees
+            
+            // Random opacity - increased for visibility
+            const maxOpacity = 0.4 + Math.random() * 0.4; // 0.4-0.8
+            
+            // Set position and animation properties
+            symbol.style.left = `${startX}px`;
+            symbol.style.top = `${startY}px`;
+            symbol.style.setProperty('--duration', `${duration}s`);
+            symbol.style.setProperty('--delay', `${delay}s`);
+            symbol.style.setProperty('--translate-x-mid', `${translateXMid}px`);
+            symbol.style.setProperty('--translate-y-mid', `${translateYMid}px`);
+            symbol.style.setProperty('--translate-x', `${translateX}px`);
+            symbol.style.setProperty('--translate-y', `${translateY}px`);
+            symbol.style.setProperty('--rotate-mid', `${rotateMid}deg`);
+            symbol.style.setProperty('--rotate', `${rotate}deg`);
+            symbol.style.setProperty('--max-opacity', maxOpacity);
+            
+            // Add mouse hover effect
+            symbol.addEventListener('mouseenter', function() {
+                popSymbol(this);
+            });
+            
+            container.appendChild(symbol);
+            
+            // Auto-remove after animation completes
+            setTimeout(() => {
+                if (symbol.parentNode) {
+                    symbol.remove();
+                }
+            }, (duration + delay) * 1000);
+            
+            return symbol;
+        }
+        
+        // Pop effect for a symbol
+        function popSymbol(symbol) {
+            // First pause the ongoing animation
+            symbol.style.animationPlayState = 'paused';
+            
+            // Add pop class for the effect
+            symbol.classList.add('pop');
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (symbol.parentNode) {
+                    symbol.remove();
+                }
+            }, 800);
+        }
+        
+        // Create particles
+        function createParticles(count) {
+            const gamingBackground = document.querySelector('.gaming-background');
+            const colors = ['#7e57c2', '#4361EE', '#FF36AB', '#00e676', '#ffb300'];
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Randomize properties
+                const size = 3 + Math.random() * 4;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const duration = 10 + Math.random() * 20; // 10-30s
+                const x = window.innerWidth * (Math.random() - 0.5) * 1.2;
+                const y = window.innerHeight * (Math.random() - 0.5) * 1.2;
+                const startX = Math.random() * window.innerWidth;
+                const startY = Math.random() * window.innerHeight;
+                const opacity = 0.3 + Math.random() * 0.5; // 0.3-0.8
+                
+                // Apply styles
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${startX}px`;
+                particle.style.top = `${startY}px`;
+                particle.style.setProperty('--color', color);
+                particle.style.setProperty('--duration', `${duration}s`);
+                particle.style.setProperty('--x', `${x}px`);
+                particle.style.setProperty('--y', `${y}px`);
+                particle.style.setProperty('--opacity', opacity);
+                
+                // Add to background
+                gamingBackground.appendChild(particle);
+                
+                // Restart animation when it ends
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.remove();
+                        createParticles(1);
+                    }
+                }, duration * 1000);
+            }
+        }
+        
+        // Create energy orbs
+        function createEnergyOrbs(count) {
+            const gamingBackground = document.querySelector('.gaming-background');
+            const colors = [
+                { main: 'rgba(126, 87, 194, 0.3)', light: 'rgba(176, 133, 245, 0.2)' },
+                { main: 'rgba(67, 97, 238, 0.3)', light: 'rgba(112, 135, 255, 0.2)' },
+                { main: 'rgba(255, 54, 171, 0.3)', light: 'rgba(255, 123, 210, 0.2)' },
+                { main: 'rgba(0, 230, 118, 0.3)', light: 'rgba(71, 255, 163, 0.2)' }
+            ];
+            
+            for (let i = 0; i < count; i++) {
+                const orb = document.createElement('div');
+                orb.className = 'energy-orb';
+                
+                // Randomize properties
+                const colorSet = colors[Math.floor(Math.random() * colors.length)];
+                const size = 50 + Math.random() * 150; // 50-200px
+                const duration = 15 + Math.random() * 20; // 15-35s
+                const delay = Math.random() * 10; // 0-10s
+                const posX = Math.random() * window.innerWidth;
+                const posY = Math.random() * window.innerHeight;
+                const opacity = 0.1 + Math.random() * 0.3; // 0.1-0.4
+                
+                // Apply styles
+                orb.style.left = `${posX}px`;
+                orb.style.top = `${posY}px`;
+                orb.style.setProperty('--size', `${size}px`);
+                orb.style.setProperty('--color', colorSet.main);
+                orb.style.setProperty('--color-light', colorSet.light);
+                orb.style.setProperty('--duration', `${duration}s`);
+                orb.style.setProperty('--delay', `${delay}s`);
+                orb.style.setProperty('--opacity', opacity);
+                
+                // Add to background
+                gamingBackground.appendChild(orb);
+                
+                // Restart animation when it ends
+                setTimeout(() => {
+                    if (orb.parentNode) {
+                        orb.remove();
+                        createEnergyOrbs(1);
+                    }
+                }, (duration + delay) * 1000);
+            }
+        }
+        
+        // Initialize gaming background when DOM is loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            initGamingBackground();
+        });
     </script>
 </body>
 </html> 
