@@ -6,22 +6,45 @@
     <title>Tic-Tac-Toe Online</title>
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="/assets/fevicon.png" type="image/x-icon">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #9575cd;
+            --primary-color: #7e57c2;
+            --primary-light: #b085f5;
+            --primary-dark: #4d2c91;
             --accent-color: #00e676;
-            --border-color: rgba(126, 87, 194, 0.3);
+            --accent-dark: #00c853;
+            --neon-pink: #FF36AB;
+            --neon-blue: #4361EE;
+            --neon-purple: #8A4FFF;
+            --bg-dark: #151328;
+            --bg-darker: #0E0B1A;
+            --bg-card: rgba(30, 30, 60, 0.85);
+            --border-color: rgba(159, 124, 255, 0.3);
             --text-primary: #ffffff;
             --text-secondary: #cccccc;
             --danger-color: #ff5252;
+            --success-color: #00e676;
+            --warning-color: #ffb300;
             --transition-speed: 0.2s;
         }
         
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark), var(--bg-darker));
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
             color: var(--text-primary);
             margin: 0;
             padding: 0;
@@ -29,125 +52,256 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 80% 20%, rgba(138, 79, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 20% 80%, rgba(67, 97, 238, 0.1) 0%, transparent 20%);
+            z-index: -1;
+        }
+        
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
         
         h1 {
-            color: var(--primary-color);
-            font-size: 2.5rem;
+            color: var(--text-primary);
+            font-size: 3.5rem;
+            font-weight: 700;
             text-align: center;
             margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--neon-pink), var(--neon-purple), var(--neon-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 15px rgba(138, 79, 255, 0.5);
+            letter-spacing: -0.5px;
         }
         
         .lobby-container {
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
-            background: rgba(30, 30, 46, 0.85);
+            background: var(--bg-card);
             padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(126, 87, 194, 0.3);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(159, 124, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Glowing border effect */
+        .lobby-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue), var(--neon-pink), var(--neon-purple));
+            border-radius: 26px;
+            z-index: -1;
+            opacity: 0.4;
+            filter: blur(10px);
         }
         
         .room-options {
             display: flex;
             justify-content: space-between;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-top: 2rem;
             margin-bottom: 3rem;
         }
         
         .option-card {
-            background: rgba(30, 30, 46, 0.7);
-            border-radius: 15px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            transition: all var(--transition-speed);
+            background: rgba(25, 24, 43, 0.7);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            border: 1px solid rgba(159, 124, 255, 0.2);
+            transition: all 0.3s ease;
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transform: translateY(0);
         }
         
         .option-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 15px rgba(126, 87, 194, 0.4);
+            transform: translateY(-8px);
+            border-color: var(--primary-light);
+            box-shadow: 0 10px 25px rgba(126, 87, 194, 0.4);
+        }
+        
+        /* Background pulse effect on hover */
+        .option-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(138, 79, 255, 0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+        
+        .option-card:hover::after {
+            opacity: 1;
         }
         
         .option-icon {
-            width: 60px;
-            height: 60px;
-            background-color: var(--primary-color);
-            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
             margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(135deg, var(--primary-color), var(--neon-purple));
+            box-shadow: 0 8px 20px rgba(126, 87, 194, 0.3);
         }
         
         .option-icon i {
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #fff;
         }
         
         .option-card h3 {
             color: var(--text-primary);
-            margin: 0 0 0.5rem 0;
-            font-size: 1.3rem;
+            margin: 0 0 0.7rem 0;
+            font-size: 1.4rem;
             text-align: center;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
         }
         
         .option-card p {
             color: var(--text-secondary);
             margin: 0;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
         }
         
         .available-rooms-section {
-            margin-top: 2rem;
+            margin-top: 3rem;
+            position: relative;
         }
         
         .available-rooms-section h2 {
-            color: var(--primary-color);
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
             text-align: center;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .available-rooms-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(to right, var(--neon-pink), var(--neon-purple));
+            border-radius: 2px;
         }
         
         .room-list {
-            background: rgba(25, 25, 35, 0.5);
-            border-radius: 10px;
+            background: rgba(25, 24, 43, 0.5);
+            border-radius: 16px;
             max-height: 300px;
             overflow-y: auto;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(159, 124, 255, 0.2);
+            padding: 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) rgba(25, 24, 43, 0.5);
+        }
+        
+        .room-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .room-list::-webkit-scrollbar-track {
+            background: rgba(25, 24, 43, 0.5);
+            border-radius: 4px;
+        }
+        
+        .room-list::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
         }
         
         .room-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.8rem 1rem;
-            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(159, 124, 255, 0.2);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            background: rgba(30, 29, 51, 0.7);
+        }
+        
+        .room-item:hover {
+            background: rgba(40, 38, 71, 0.8);
+            transform: translateX(5px);
         }
         
         .room-item:last-child {
             border-bottom: none;
+            margin-bottom: 0;
         }
         
         .join-btn {
-            background-color: var(--primary-color);
+            background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
             color: white;
             border: none;
-            border-radius: 5px;
-            padding: 0.5rem 1.5rem;
+            border-radius: 12px;
+            padding: 0.6rem 1.5rem;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 12px rgba(126, 87, 194, 0.3);
         }
         
         .join-btn:hover {
-            background-color: #7e57c2;
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(126, 87, 194, 0.4);
         }
         
         /* Dialog styles */
@@ -158,61 +312,117 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(14, 11, 26, 0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(8px);
         }
         
         .modal-content {
-            background: rgba(30, 30, 46, 0.95);
-            padding: 2rem;
-            border-radius: 15px;
+            background: rgba(30, 29, 51, 0.95);
+            padding: 2.5rem;
+            border-radius: 24px;
             width: 90%;
-            max-width: 400px;
-            border: 1px solid var(--border-color);
+            max-width: 450px;
+            border: 1px solid rgba(159, 124, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            animation: modalAppear 0.3s ease-out;
+        }
+        
+        /* Glowing border effect for modal */
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue), var(--neon-pink), var(--neon-purple));
+            border-radius: 26px;
+            z-index: -1;
+            opacity: 0.4;
+            filter: blur(10px);
+        }
+        
+        @keyframes modalAppear {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
         .modal-content h3 {
-            color: var(--primary-color);
+            color: var(--text-primary);
             margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 600;
         }
         
         .modal-content input {
             width: 100%;
-            padding: 0.8rem;
-            margin: 1rem 0;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: rgba(18, 18, 18, 0.7);
+            padding: 1rem 1.2rem;
+            margin: 1rem 0 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(159, 124, 255, 0.3);
+            background: rgba(20, 19, 32, 0.7);
             color: var(--text-primary);
             font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        .modal-content input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(159, 124, 255, 0.2);
         }
         
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
-            gap: 0.5rem;
+            gap: 1rem;
             margin-top: 1.5rem;
         }
         
         .modal-btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 1rem;
             border: none;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
         }
         
         .cancel-btn {
-            background: transparent;
+            background: rgba(30, 29, 51, 0.7);
             color: var(--text-secondary);
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(159, 124, 255, 0.3);
+        }
+        
+        .cancel-btn:hover {
+            background: rgba(40, 38, 71, 0.8);
+            color: var(--text-primary);
         }
         
         .submit-btn {
-            background: var(--primary-color);
+            background: linear-gradient(to right, var(--primary-color), var(--neon-purple));
             color: white;
+            box-shadow: 0 4px 12px rgba(126, 87, 194, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(126, 87, 194, 0.4);
         }
         
         /* Matching animation */
@@ -223,72 +433,195 @@
         }
         
         .matching-animation h3 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        
+        .pulse-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
         }
         
         .pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: var(--primary-color);
-            margin: 0 auto;
+            background: linear-gradient(135deg, var(--neon-purple), var(--primary-color));
+            box-shadow: 0 0 30px rgba(138, 79, 255, 0.6);
             animation: pulse 1.5s infinite ease-in-out;
+        }
+        
+        .pulse::before, .pulse::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-purple), var(--primary-color));
+            opacity: 0.7;
+            animation: pulsate 2s infinite ease-in-out;
+        }
+        
+        .pulse::before {
+            animation-delay: 0.5s;
+        }
+        
+        .pulse::after {
+            animation-delay: 1s;
         }
         
         @keyframes pulse {
             0% {
-                transform: scale(0.8);
+                transform: translate(-50%, -50%) scale(0.8);
                 opacity: 0.8;
             }
             50% {
-                transform: scale(1);
+                transform: translate(-50%, -50%) scale(1);
                 opacity: 1;
             }
             100% {
-                transform: scale(0.8);
+                transform: translate(-50%, -50%) scale(0.8);
                 opacity: 0.8;
+            }
+        }
+        
+        @keyframes pulsate {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1.8);
+                opacity: 0;
+            }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            .lobby-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .room-options {
+                flex-direction: column;
+                margin-bottom: 2rem;
+            }
+            
+            .option-card {
+                padding: 1.5rem;
+            }
+            
+            .option-icon {
+                width: 70px;
+                height: 70px;
+                margin-bottom: 1.2rem;
+            }
+            
+            .available-rooms-section h2 {
+                font-size: 1.5rem;
+            }
+            
+            .join-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .lobby-container {
+                padding: 1.5rem;
+            }
+            
+            .room-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+            }
+            
+            .join-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .modal-content {
+                padding: 1.8rem;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+            
+            .modal-btn {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="lobby-container">
-        <h1>Online Tic Tac Toe</h1>
+        <h1>Tic-Tac-Toe Online</h1>
         
         <div class="room-options">
-            <!-- Create Room Option -->
             <div class="option-card" id="createRoomCard">
                 <div class="option-icon">
                     <i class="fas fa-plus"></i>
                 </div>
                 <h3>Create Room</h3>
-                <p>Create a new game room and invite friends to play</p>
+                <p>Start a new game and invite friends to join your room.</p>
             </div>
-            
-            <!-- Join Room Option -->
             <div class="option-card" id="joinRoomCard">
                 <div class="option-icon">
-                    <i class="fas fa-sign-in-alt"></i>
+                    <i class="fas fa-door-open"></i>
                 </div>
                 <h3>Join Room</h3>
-                <p>Join an existing game room using a room code</p>
+                <p>Enter a room code to join a game with your friends.</p>
             </div>
-            
-            <!-- Play with Random Option -->
-            <div class="option-card" id="playRandomCard">
+            <div class="option-card" id="randomMatchCard">
                 <div class="option-icon">
                     <i class="fas fa-random"></i>
                 </div>
-                <h3>Play with Random</h3>
-                <p>Match with a random player and start playing</p>
+                <h3>Random Match</h3>
+                <p>Find a random opponent to play with instantly.</p>
             </div>
+        </div>
+        
+        <div class="matching-animation" id="matchingAnimation">
+            <h3>Finding a match for you...</h3>
+            <div class="pulse-container">
+                <div class="pulse"></div>
+            </div>
+            <button class="modal-btn cancel-btn" id="cancelMatchBtn" style="margin-top: 1.5rem;">Cancel</button>
         </div>
         
         <div class="available-rooms-section">
             <h2>Available Rooms</h2>
-            <div class="room-list" id="availableRoomsList">
-                <!-- Room items will be added here dynamically -->
+            <div class="room-list" id="roomList">
+                <!-- Rooms will be dynamically added here -->
+                <div class="no-rooms-message" id="noRoomsMessage" style="padding: 1.5rem; text-align: center; color: var(--text-secondary);">
+                    No rooms available at the moment. Create a new room to start playing!
+                </div>
             </div>
         </div>
     </div>
@@ -296,11 +629,12 @@
     <!-- Create Room Modal -->
     <div class="modal" id="createRoomModal">
         <div class="modal-content">
-            <h3>Create New Room</h3>
-            <input type="text" id="createPlayerName" placeholder="Your Name" required>
+            <h3>Create a New Room</h3>
+            <label for="playerNameInput" style="color: var(--text-secondary);">Enter your name:</label>
+            <input type="text" id="playerNameInput" placeholder="Your name" maxlength="15">
             <div class="modal-buttons">
-                <button class="modal-btn cancel-btn" id="createCancelBtn">Cancel</button>
-                <button class="modal-btn submit-btn" id="createSubmitBtn">Create</button>
+                <button class="modal-btn cancel-btn" id="cancelCreateBtn">Cancel</button>
+                <button class="modal-btn submit-btn" id="submitCreateBtn">Create Room</button>
             </div>
         </div>
     </div>
@@ -308,40 +642,31 @@
     <!-- Join Room Modal -->
     <div class="modal" id="joinRoomModal">
         <div class="modal-content">
-            <h3>Join Existing Room</h3>
-            <input type="text" id="joinPlayerName" placeholder="Your Name" required>
-            <input type="text" id="roomId" placeholder="Room Code" required>
+            <h3>Join a Room</h3>
+            <label for="joinNameInput" style="color: var(--text-secondary);">Enter your name:</label>
+            <input type="text" id="joinNameInput" placeholder="Your name" maxlength="15">
+            <label for="roomIdInput" style="color: var(--text-secondary);">Enter room code:</label>
+            <input type="text" id="roomIdInput" placeholder="Room code">
             <div class="modal-buttons">
-                <button class="modal-btn cancel-btn" id="joinCancelBtn">Cancel</button>
-                <button class="modal-btn submit-btn" id="joinSubmitBtn">Join</button>
+                <button class="modal-btn cancel-btn" id="cancelJoinBtn">Cancel</button>
+                <button class="modal-btn submit-btn" id="submitJoinBtn">Join Room</button>
             </div>
         </div>
     </div>
     
-    <!-- Random Play Modal -->
-    <div class="modal" id="randomPlayModal">
+    <!-- Random Match Modal -->
+    <div class="modal" id="randomMatchModal">
         <div class="modal-content">
-            <h3>Play with Random Player</h3>
-            <input type="text" id="randomPlayerName" placeholder="Your Name" required>
+            <h3>Find a Random Match</h3>
+            <label for="randomNameInput" style="color: var(--text-secondary);">Enter your name:</label>
+            <input type="text" id="randomNameInput" placeholder="Your name" maxlength="15">
             <div class="modal-buttons">
-                <button class="modal-btn cancel-btn" id="randomCancelBtn">Cancel</button>
-                <button class="modal-btn submit-btn" id="randomSubmitBtn">Find Match</button>
+                <button class="modal-btn cancel-btn" id="cancelRandomBtn">Cancel</button>
+                <button class="modal-btn submit-btn" id="submitRandomBtn">Find Match</button>
             </div>
         </div>
     </div>
-    
-    <!-- Matching Animation -->
-    <div class="modal" id="matchingModal">
-        <div class="modal-content">
-            <div class="matching-animation" style="display: block;">
-                <h3>Finding a match...</h3>
-                <div class="pulse"></div>
-                <p id="waitingMessage">Please wait while we find an opponent</p>
-                <button class="modal-btn cancel-btn" id="cancelMatchBtn" style="margin-top: 1rem;">Cancel</button>
-            </div>
-        </div>
-    </div>
-    
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         // Connect to Socket.io server
@@ -350,28 +675,28 @@
         // DOM Elements
         const createRoomCard = document.getElementById('createRoomCard');
         const joinRoomCard = document.getElementById('joinRoomCard');
-        const playRandomCard = document.getElementById('playRandomCard');
+        const randomMatchCard = document.getElementById('randomMatchCard');
         
         const createRoomModal = document.getElementById('createRoomModal');
         const joinRoomModal = document.getElementById('joinRoomModal');
-        const randomPlayModal = document.getElementById('randomPlayModal');
-        const matchingModal = document.getElementById('matchingModal');
+        const randomMatchModal = document.getElementById('randomMatchModal');
+        const matchingAnimation = document.getElementById('matchingAnimation');
         
-        const createPlayerNameInput = document.getElementById('createPlayerName');
-        const joinPlayerNameInput = document.getElementById('joinPlayerName');
-        const randomPlayerNameInput = document.getElementById('randomPlayerName');
-        const roomIdInput = document.getElementById('roomId');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const joinNameInput = document.getElementById('joinNameInput');
+        const randomNameInput = document.getElementById('randomNameInput');
+        const roomIdInput = document.getElementById('roomIdInput');
         
-        const createSubmitBtn = document.getElementById('createSubmitBtn');
-        const joinSubmitBtn = document.getElementById('joinSubmitBtn');
-        const randomSubmitBtn = document.getElementById('randomSubmitBtn');
+        const submitCreateBtn = document.getElementById('submitCreateBtn');
+        const submitJoinBtn = document.getElementById('submitJoinBtn');
+        const submitRandomBtn = document.getElementById('submitRandomBtn');
         const cancelMatchBtn = document.getElementById('cancelMatchBtn');
         
-        const createCancelBtn = document.getElementById('createCancelBtn');
-        const joinCancelBtn = document.getElementById('joinCancelBtn');
-        const randomCancelBtn = document.getElementById('randomCancelBtn');
+        const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+        const cancelJoinBtn = document.getElementById('cancelJoinBtn');
+        const cancelRandomBtn = document.getElementById('cancelRandomBtn');
         
-        const availableRoomsList = document.getElementById('availableRoomsList');
+        const roomList = document.getElementById('roomList');
         
         // Show/Hide Modals
         createRoomCard.addEventListener('click', () => {
@@ -382,30 +707,30 @@
             joinRoomModal.style.display = 'flex';
         });
         
-        playRandomCard.addEventListener('click', () => {
-            randomPlayModal.style.display = 'flex';
+        randomMatchCard.addEventListener('click', () => {
+            randomMatchModal.style.display = 'flex';
         });
         
-        createCancelBtn.addEventListener('click', () => {
+        cancelCreateBtn.addEventListener('click', () => {
             createRoomModal.style.display = 'none';
         });
         
-        joinCancelBtn.addEventListener('click', () => {
+        cancelJoinBtn.addEventListener('click', () => {
             joinRoomModal.style.display = 'none';
         });
         
-        randomCancelBtn.addEventListener('click', () => {
-            randomPlayModal.style.display = 'none';
+        cancelRandomBtn.addEventListener('click', () => {
+            randomMatchModal.style.display = 'none';
         });
         
         cancelMatchBtn.addEventListener('click', () => {
             socket.emit('cancelRandomMatch');
-            matchingModal.style.display = 'none';
+            matchingAnimation.style.display = 'none';
         });
         
         // Create Room
-        createSubmitBtn.addEventListener('click', () => {
-            const playerName = createPlayerNameInput.value.trim();
+        submitCreateBtn.addEventListener('click', () => {
+            const playerName = playerNameInput.value.trim();
             
             if (!playerName) {
                 alert('Please enter your name');
@@ -417,8 +742,8 @@
         });
         
         // Join Room
-        joinSubmitBtn.addEventListener('click', () => {
-            const playerName = joinPlayerNameInput.value.trim();
+        submitJoinBtn.addEventListener('click', () => {
+            const playerName = joinNameInput.value.trim();
             const roomId = roomIdInput.value.trim();
             
             if (!playerName) {
@@ -436,16 +761,16 @@
         });
         
         // Play with Random
-        randomSubmitBtn.addEventListener('click', () => {
-            const playerName = randomPlayerNameInput.value.trim();
+        submitRandomBtn.addEventListener('click', () => {
+            const playerName = randomNameInput.value.trim();
             
             if (!playerName) {
                 alert('Please enter your name');
                 return;
             }
             
-            randomPlayModal.style.display = 'none';
-            matchingModal.style.display = 'flex';
+            randomMatchModal.style.display = 'none';
+            matchingAnimation.style.display = 'flex';
             
             // Store player name in session storage
             sessionStorage.setItem('playerName', playerName);
@@ -459,7 +784,7 @@
             console.log('Room created event received:', { roomId, isHost, waitingRoom });
             
             // Store player info in sessionStorage
-            sessionStorage.setItem('playerName', createPlayerNameInput.value.trim());
+            sessionStorage.setItem('playerName', playerNameInput.value.trim());
             sessionStorage.setItem('roomId', roomId);
             sessionStorage.setItem('playerSymbol', 'X');
             
@@ -480,7 +805,7 @@
         // Room Joined Event
         socket.on('roomJoined', (data) => {
             // Store player info in sessionStorage
-            sessionStorage.setItem('playerName', joinPlayerNameInput.value.trim() || randomPlayerNameInput.value.trim());
+            sessionStorage.setItem('playerName', joinNameInput.value.trim() || randomNameInput.value.trim());
             sessionStorage.setItem('roomId', data.roomId);
             sessionStorage.setItem('playerSymbol', data.playerSymbol);
             
@@ -498,7 +823,7 @@
         
         // Match Found Event
         socket.on('randomMatchFound', ({ roomId, playerSymbol, isHost, waitingRoom }) => {
-            matchingModal.style.display = 'none';
+            matchingAnimation.style.display = 'none';
             
             // Store room ID and player symbol
             sessionStorage.setItem('roomId', roomId);
@@ -519,12 +844,12 @@
         // Display available rooms
         socket.on('availableRooms', (roomIds) => {
             if (roomIds.length > 0) {
-                availableRoomsList.innerHTML = '';
+                roomList.innerHTML = '';
                 roomIds.forEach(roomId => {
                     const roomItem = document.createElement('div');
                     roomItem.className = 'room-item';
                     roomItem.innerHTML = `<span>Room #${roomId}</span><button class="join-btn" data-room="${roomId}">Join</button>`;
-                    availableRoomsList.appendChild(roomItem);
+                    roomList.appendChild(roomItem);
                 });
                 
                 // Add event listeners to join buttons
@@ -535,14 +860,14 @@
                     });
                 });
             } else {
-                availableRoomsList.innerHTML = '<div style="padding: 1rem; text-align: center;">No active rooms available</div>';
+                roomList.innerHTML = '<div style="padding: 1rem; text-align: center;">No active rooms available</div>';
             }
         });
         
         // Error handling
         socket.on('error', ({ message }) => {
             alert(message);
-            matchingModal.style.display = 'none';
+            matchingAnimation.style.display = 'none';
         });
         
         // Check URL for room ID
