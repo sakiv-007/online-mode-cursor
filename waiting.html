@@ -1299,10 +1299,32 @@
                 document.querySelector('h1').textContent = 'Waiting for Opponent';
             }
             
-            // Enable start button if there are at least 2 players and user is host
+            // Check if the current player is the host from the participants list
+            const self = participants.find(p => p.name === playerName);
+            if (self) {
+                // Update local host status based on participants list
+                const wasHost = isHost;
+                isHost = self.isHost;
+                
+                // If host status changed, update in sessionStorage and log
+                if (wasHost !== isHost) {
+                    sessionStorage.setItem('isHost', isHost ? 'true' : 'false');
+                    console.log(`Host status updated: ${wasHost} -> ${isHost}`);
+                }
+            }
+            
+            // Handle start button visibility and state
             if (isHost) {
+                // Only enable start button for host if there are at least 2 players
                 const players = participants.filter(p => !p.isSpectator);
                 startBtn.disabled = players.length < 2;
+                startBtn.style.display = 'block'; // Show button for host
+                console.log(`Host view: Start button ${startBtn.disabled ? 'disabled' : 'enabled'}, players: ${players.length}`);
+            } else {
+                // Non-host players should have their button disabled and hidden
+                startBtn.disabled = true;
+                startBtn.style.display = 'none'; // Hide button for non-host
+                console.log('Non-host view: Start button hidden');
             }
         }
         
@@ -1432,14 +1454,16 @@
             
             // Double check host status from participants list
             const self = participants.find(p => p.name === playerName);
-            if (self && self.isHost) {
-                isHost = true; // Ensure local state matches
-                sessionStorage.setItem('isHost', 'true');
+            if (self) {
+                // Use the host status from the participants list as source of truth
+                isHost = self.isHost; 
+                sessionStorage.setItem('isHost', isHost ? 'true' : 'false');
             }
             
             if (!isHost) {
                 console.log('User is not host, cannot start game');
                 showNotification('warning', 'Only the host can start the game');
+                startBtn.disabled = true; // Force disable the button
                 return;
             }
             
@@ -1462,8 +1486,10 @@
             // Prevent double-clicks
             startBtn.disabled = true;
             setTimeout(() => {
-                startBtn.disabled = false;
-                startBtn.textContent = 'Start Game';
+                if (isHost) { // Only re-enable if still host
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start Game';
+                }
             }, 2000);
         });
         
@@ -1482,47 +1508,29 @@
                 console.log('Updated player symbol to:', playerSymbol);
             }
             
-            // Set isHost if server indicates this player is host
-            if (data.isHost) {
-                if (!isHost) {
-                    console.log('Server set this player as host, updating local state');
-                }
+            // Trust server's decision about host status
+            isHost = data.isHost;
+            sessionStorage.setItem('isHost', isHost ? 'true' : 'false');
+            console.log('Setting user as host based on server response:', isHost);
                 
-                isHost = true;
-                sessionStorage.setItem('isHost', 'true');
-                console.log('Setting user as host. isHost is now:', isHost);
-                
+            if (isHost) {
                 // Enable start button if there are at least 2 players
                 const players = participants.filter(p => !p.isSpectator);
                 startBtn.disabled = players.length < 2;
                 console.log('Start button disabled:', startBtn.disabled, 'Players count:', players.length);
             } else {
-                // If the server says we're not host but we thought we were, update
-                if (isHost) {
-                    console.log('Server says this player is not host, updating local state');
-                    isHost = false;
-                    sessionStorage.setItem('isHost', 'false');
-                }
-                
+                // Not host, ensure the button is disabled
                 startBtn.disabled = true;
+                console.log('User is not host - disabling start button');
             }
             
-            // Check if current user is in the participant list and update UI accordingly
+            // Double check against participants list to be sure
             const self = participants.find(p => p.name === playerName);
             if (self) {
-                // Update any additional data about the player
+                // If participant data conflicts with server response, log warning but trust server
                 if (self.isHost !== isHost) {
-                    console.log('Updating host status based on participant list:', self.isHost);
-                    isHost = self.isHost;
-                    sessionStorage.setItem('isHost', isHost ? 'true' : 'false');
-                    
-                    // Update start button if needed
-                    if (isHost) {
-                        const players = participants.filter(p => !p.isSpectator);
-                        startBtn.disabled = players.length < 2;
-                    } else {
-                        startBtn.disabled = true;
-                    }
+                    console.warn('Host status mismatch. Server says:', isHost, 'Participant list says:', self.isHost);
+                    console.log('Trusting server decision for host status');
                 }
             }
             

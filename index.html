@@ -1147,24 +1147,37 @@
             // Show the match found modal
             document.getElementById('matchFoundModal').style.display = 'flex';
             
+            // Flag to track if match was cancelled
+            window.matchCancelled = false;
+            
             // Start countdown
             let countdownValue = 10;
             const countdownElement = document.getElementById('countdown');
             const countdownInterval = setInterval(() => {
+                // Check if match was cancelled
+                if (window.matchCancelled) {
+                    clearInterval(countdownInterval);
+                    return;
+                }
+                
                 countdownValue--;
                 countdownElement.textContent = countdownValue;
                 
                 if (countdownValue <= 0) {
                     clearInterval(countdownInterval);
                     
-                    // Always go directly to game page for random matches, bypass waiting room
-                    window.location.href = `/game/${roomId}`;
+                    // Ensure match wasn't cancelled during the last second
+                    if (!window.matchCancelled) {
+                        // Always go directly to game page for random matches, bypass waiting room
+                        window.location.href = `/game/${roomId}`;
+                    }
                 }
             }, 1000);
             
             // Cancel match button
             document.getElementById('cancelMatchFoundBtn').addEventListener('click', () => {
                 clearInterval(countdownInterval);
+                window.matchCancelled = true;
                 socket.emit('cancelRandomMatch');
                 document.getElementById('matchFoundModal').style.display = 'none';
                 // Return to home screen to avoid broken match state
@@ -1174,6 +1187,9 @@
         
         // Handle random match cancellation
         socket.on('randomMatchCancelled', ({ message, cancelledBy, reason }) => {
+            // Set cancellation flag to prevent game redirect
+            window.matchCancelled = true;
+            
             // Clear any countdown interval if it exists
             if (typeof countdownInterval !== 'undefined') {
                 clearInterval(countdownInterval);

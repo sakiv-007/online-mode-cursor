@@ -87,6 +87,7 @@ io.on('connection', (socket) => {
       // Ensure the room is set to playing status
       room.status = RoomStatus.PLAYING;
       room.gameActive = true;
+      room.gameStartedAt = Date.now(); // Add timestamp for when game actually started
       
       // Notify both players in the room about game state
       io.to(roomId).emit('gameInitialized', {
@@ -174,7 +175,8 @@ io.on('connection', (socket) => {
         messages: [],
         waitingRoomMessages: [],
         createdAt: Date.now(),
-        isRandomMatch: true
+        isRandomMatch: true,
+        gameStartedAt: null  // Will be set when the game actually starts
       };
       
       // Join both players to the room
@@ -242,13 +244,16 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         const playerName = player ? player.name : 'A player';
         
-        // Notify other players in the room
-        socket.to(roomId).emit('randomMatchCancelled', {
+        // Create the cancellation message
+        const cancelMessage = {
           message: `${playerName} cancelled the match`,
           cancelledBy: playerName,
           roomId: roomId,
           reason: 'cancelled'
-        });
+        };
+        
+        // Notify all players in the room, including the one who cancelled
+        io.to(roomId).emit('randomMatchCancelled', cancelMessage);
         
         console.log(`Emitted randomMatchCancelled to room ${roomId} - cancelled by ${playerName}`);
         
@@ -364,7 +369,7 @@ io.on('connection', (socket) => {
         room.spectators.push(participant);
       } else {
         // Check if this should be the host (first player or explicit host flag)
-        const shouldBeHost = room.players.length === 0 || isHost === true || isCreator;
+        const shouldBeHost = (room.players.length === 0) || (isHost === true && isCreator);
         
         // Join as player
         participant = {
@@ -401,7 +406,7 @@ io.on('connection', (socket) => {
       participant.connected = true;
       
       // If player had host status previously or is the creator, preserve it
-      if (isHost === true || isCreator) {
+      if ((isHost === true && isCreator) || (participant.isHost && isCreator)) {
         participant.isHost = true;
         
         // Also update in players array

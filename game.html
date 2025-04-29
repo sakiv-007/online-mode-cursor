@@ -947,6 +947,20 @@
                 }
             });
             
+            // Handle random match cancellation
+            socket.on('randomMatchCancelled', ({ message, cancelledBy, reason }) => {
+                console.log('Random match cancelled:', message);
+                
+                // Show notification
+                showNotification('error', message || 'The match was cancelled.');
+                
+                // Set a timeout to allow the notification to be seen before redirecting
+                setTimeout(() => {
+                    alert('Match cancelled. Returning to lobby.');
+                    window.location.href = '/';
+                }, 1000);
+            });
+            
             // DOM elements
             const statusDisplay = document.getElementById('status');
             const cells = document.querySelectorAll('.cell');
