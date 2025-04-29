@@ -1201,13 +1201,64 @@
             // Hide matching animation if it's showing
             matchingAnimation.style.display = 'none';
             
-            // Show an alert with the cancellation message
-            alert(message || 'The match was cancelled.');
+            // Create a modal popup for match cancellation
+            const cancelModal = document.createElement('div');
+            cancelModal.className = 'modal-overlay';
+            cancelModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+                backdrop-filter: blur(5px);
+                animation: popup-appear 0.3s ease;
+            `;
             
-            // If we're not on the home page, redirect back
-            if (window.location.pathname !== '/') {
-                window.location.href = '/';
-            }
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.style.cssText = `
+                background: var(--bg-card);
+                padding: 30px;
+                border-radius: 20px;
+                box-shadow: 0 0 30px rgba(128, 90, 213, 0.5);
+                text-align: center;
+                border: 1px solid var(--primary-light);
+                max-width: 90%;
+                width: 400px;
+            `;
+            
+            modalContent.innerHTML = `
+                <div style="font-size: 3rem; color: var(--danger-color); margin-bottom: 15px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h2 style="color: white; margin-bottom: 15px;">Match Cancelled</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">${message || 'The match was cancelled.'}</p>
+                <button id="cancelOkBtn" style="
+                    background: var(--primary-color);
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 10px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">OK</button>
+            `;
+            
+            // Add the modal content to the modal
+            cancelModal.appendChild(modalContent);
+            
+            document.body.appendChild(cancelModal);
+            
+            // Add event listener to the OK button
+            document.getElementById('cancelOkBtn').addEventListener('click', () => {
+                document.body.removeChild(cancelModal);
+            });
         });
         
         // Display available rooms
