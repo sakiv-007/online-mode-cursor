@@ -78,6 +78,28 @@ io.on('connection', (socket) => {
   // Send existing rooms to client on connection
   socket.emit('availableRooms', Object.keys(rooms));
 
+  // Notify server that a random match game has started
+  socket.on('randomMatchGameStarted', ({ roomId }) => {
+    console.log(`Random match game started: ${roomId}`);
+    
+    const room = rooms[roomId];
+    if (room) {
+      // Ensure the room is set to playing status
+      room.status = RoomStatus.PLAYING;
+      room.gameActive = true;
+      
+      // Notify both players in the room about game state
+      io.to(roomId).emit('gameInitialized', {
+        gameState: room.gameState,
+        currentPlayer: 'X', // X always goes first
+        players: room.players,
+        gameActive: true
+      });
+      
+      console.log(`Updated room ${roomId} to playing status for random match and notified players`);
+    }
+  });
+
   // Find a random match
   socket.on('findRandomMatch', (playerName) => {
     console.log(`Player ${playerName} is looking for a random match`);
@@ -146,8 +168,8 @@ io.on('connection', (socket) => {
         ],
         gameState: ['', '', '', '', '', '', '', '', ''],
         currentPlayer: 'X',
-        gameActive: false,  // Game not active until host starts it
-        status: RoomStatus.WAITING,  // Start in waiting room
+        gameActive: true,  // Set game to active immediately for random matches
+        status: RoomStatus.PLAYING,  // Set to PLAYING instead of WAITING for random matches
         scores: { X: 0, O: 0 },
         messages: [],
         waitingRoomMessages: [],
@@ -166,7 +188,12 @@ io.on('connection', (socket) => {
           roomId, 
           playerSymbol: 'X',
           isHost: true,  // First player is host
-          waitingRoom: true  // Send to waiting room
+          waitingRoom: false,  // Skip waiting room for random matches
+          opponentName: player2.playerName,  // Include opponent name
+          players: [
+            { name: player1.playerName, symbol: 'X' },
+            { name: player2.playerName, symbol: 'O' }
+          ]
         });
       }
       
@@ -177,7 +204,12 @@ io.on('connection', (socket) => {
           roomId, 
           playerSymbol: 'O',
           isHost: false,
-          waitingRoom: true  // Send to waiting room
+          waitingRoom: false,  // Skip waiting room for random matches
+          opponentName: player1.playerName,  // Include opponent name
+          players: [
+            { name: player1.playerName, symbol: 'X' },
+            { name: player2.playerName, symbol: 'O' }
+          ]
         });
       }
       

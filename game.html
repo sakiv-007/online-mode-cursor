@@ -856,26 +856,37 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Function to get room ID from URL
-            function getUrlRoomId() {
-                const pathParts = window.location.pathname.split('/');
-                return pathParts[pathParts.length - 1];
+            // Connect to Socket.io server
+            const socket = io();
+            
+            // Get data from session storage
+            const playerName = sessionStorage.getItem('playerName');
+            const playerSymbol = sessionStorage.getItem('playerSymbol');
+            let roomId = sessionStorage.getItem('roomId');
+            const isHost = sessionStorage.getItem('isHost') === 'true';
+            const isRandomMatch = sessionStorage.getItem('isRandomMatch') === 'true';
+            
+            // Try to get opponent name and players list from sessionStorage
+            let opponentName = sessionStorage.getItem('opponentName') || '';
+            let players = [];
+            try {
+                const playersJson = sessionStorage.getItem('players');
+                if (playersJson) {
+                    players = JSON.parse(playersJson);
+                }
+            } catch (e) {
+                console.error('Error parsing players:', e);
             }
             
             // Game variables
             let gameActive = false;
             let currentPlayer = "X";
             let gameState = ["", "", "", "", "", "", "", "", ""];
-            let playerName = sessionStorage.getItem('playerName') || '';
-            let roomId = sessionStorage.getItem('roomId') || getUrlRoomId();
-            let playerSymbol = sessionStorage.getItem('playerSymbol') || '';
-            let opponentName = '';
             let scores = { X: 0, O: 0 };
             let isSpectator = false;
             let participants = [];
-            let isHost = sessionStorage.getItem('isHost') === 'true';
             
-            console.log('Session data:', { playerName, roomId, playerSymbol });
+            console.log('Game page data:', { playerName, playerSymbol, roomId, isHost, isRandomMatch, opponentName, players });
             
             // Check if we have the required data
             if (!playerName || !roomId) {
@@ -884,11 +895,25 @@
                 return;
             }
             
-            // Connect to Socket.io server
-            const socket = io();
+            // Function to get room ID from URL
+            function getUrlRoomId() {
+                const pathParts = window.location.pathname.split('/');
+                return pathParts[pathParts.length - 1];
+            }
             
-            // Check if room exists and redirect if needed
+            // If roomId is not in session storage, try to get it from URL
+            if (!roomId) {
+                roomId = getUrlRoomId();
+            }
+            
+            // Check room status
             socket.emit('checkRoom', roomId);
+            
+            // Additional information for random matches
+            if (isRandomMatch) {
+                console.log('This is a random match, bypassing waiting room');
+                socket.emit('randomMatchGameStarted', { roomId });
+            }
             
             socket.on('roomStatus', ({ roomId, exists, status }) => {
                 if (!exists) {
@@ -899,11 +924,19 @@
                 
                 console.log('Room status check:', status);
                 
-                // If room is in waiting status, redirect to waiting room
+                // Check if room is in waiting status
                 if (status === 'waiting') {
-                    console.log('Game not started yet, redirecting to waiting room');
-                    window.location.href = `/waiting/${roomId}`;
-                    return;
+                    console.log('Game not started yet, checking if random match');
+                    
+                    // Check if this is a random match (should bypass waiting room)
+                    if (!isRandomMatch) {
+                        console.log('Not a random match, redirecting to waiting room');
+                        window.location.href = `/waiting/${roomId}`;
+                        return;
+                    } else {
+                        console.log('Random match, staying in game page');
+                        // For random matches, stay in the game page
+                    }
                 }
                 
                 // Connect to room
@@ -932,6 +965,7 @@
             const notification = document.getElementById('notification');
             const notificationIcon = document.getElementById('notificationIcon');
             const notificationText = document.getElementById('notificationText');
+            const gameStatusElement = document.getElementById('status');
             
             // Chat elements
             const chatMessages = document.getElementById('chatMessages');
@@ -950,8 +984,78 @@
             // Display room ID
             roomIdDisplay.textContent = roomId;
             
-            // Initially disable cell clicks until game starts
-            disableCellClicks();
+            // Initialize the game state for random matches
+            if (isRandomMatch) {
+                console.log('This is a random match, initializing game immediately');
+                gameActive = true;
+                
+                // Update status display
+                if (playerSymbol === currentPlayer) {
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                    enableCellClicks();
+                } else {
+                    statusDisplay.innerHTML = `Opponent's turn <span class="player-symbol">(${currentPlayer})</span>`;
+                    disableCellClicks();
+                }
+                
+                // Update connection status
+                updateConnectionStatus('connected');
+                
+                // Initialize the game board and controls
+                initializeGameForRandomMatch();
+            } else {
+                // Initially disable cell clicks until game starts
+                disableCellClicks();
+            }
+            
+            // Helper function to initialize game board for random matches
+            function initializeGameForRandomMatch() {
+                console.log('Initializing game for random match, player symbol:', playerSymbol);
+                
+                // Set the room ID display
+                roomIdDisplay.textContent = roomId;
+                
+                // Initialize scores
+                scoreXDisplay.textContent = '0';
+                scoreODisplay.textContent = '0';
+                
+                // Set default opponent name if not available
+                if (!opponentName || opponentName.trim() === '') {
+                    opponentName = 'Opponent';
+                }
+                
+                // Update player labels - initially with generic names until opponent name is received
+                if (playerSymbol === 'X') {
+                    playerXLabel.textContent = `You (X):`;
+                    playerOLabel.textContent = `${opponentName} (O):`;
+                    
+                    // Update status since X goes first
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                } else {
+                    playerXLabel.textContent = `${opponentName} (X):`;
+                    playerOLabel.textContent = `You (O):`;
+                    
+                    // Update status since X goes first
+                    statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(X)</span>`;
+                }
+                
+                // Make board visible and clickable as appropriate
+                board.style.display = 'grid';
+                
+                if (playerSymbol === 'X') {
+                    // X goes first
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
+                
+                // Add a welcome message to chat
+                addChatMessage({
+                    message: `Welcome to Room ${roomId}! Random match started.`,
+                    isSystem: true,
+                    timestamp: Date.now()
+                });
+            }
             
             // Event listeners for cells
             cells.forEach(cell => {
@@ -1400,6 +1504,45 @@
                 console.log('Error received:', message);
             });
             
+            // Game initialized event for random matches
+            socket.on('gameInitialized', (data) => {
+                console.log('Game initialized!', data);
+                
+                // Update game state
+                gameState = data.gameState;
+                currentPlayer = data.currentPlayer;
+                gameActive = data.gameActive;
+                
+                // Update connection status
+                updateConnectionStatus('connected');
+                
+                // Update board display
+                updateBoardDisplay();
+                
+                // Update player names in labels
+                const opponent = data.players.find(p => p.symbol !== playerSymbol);
+                if (opponent) {
+                    opponentName = opponent.name;
+                    updatePlayerLabels();
+                }
+                
+                // Make sure opponent name is set to something valid
+                if (!opponentName || opponentName.trim() === '') {
+                    opponentName = 'Opponent';
+                }
+                
+                // Enable/disable cell clicks based on whose turn it is
+                if (currentPlayer === playerSymbol) {
+                    enableCellClicks();
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                } else {
+                    disableCellClicks();
+                    statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
+                }
+                
+                showNotification('success', 'Game started!');
+            });
+            
             // Handle cell click
             function handleCellClick(cell) {
                 const cellIndex = parseInt(cell.getAttribute('data-cell-index'));
@@ -1423,6 +1566,10 @@
                 } else if (currentPlayer === playerSymbol) {
                     statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
                 } else {
+                    // Make sure we have a valid opponent name
+                    if (!opponentName || opponentName.trim() === '') {
+                        opponentName = 'Opponent';
+                    }
                     statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
                 }
             }
@@ -1571,8 +1718,16 @@
 
             socket.on('connect', () => {
                 console.log('Connected to server');
+                
+                // Update status to show connected
                 connectionStatus.textContent = 'Connected';
-                connectionStatus.className = 'connected';
+                connectionStatus.className = 'connection-status status-connected';
+                connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                
+                // For random matches, immediately mark as connected
+                if (isRandomMatch) {
+                    updateConnectionStatus('connected');
+                }
                 
                 // Join room with player name and explicit host status
                 socket.emit('joinRoom', { 
@@ -1644,6 +1799,31 @@
                     startBtn.textContent = 'Starting...';
                 }
             });
+
+            // Create a proper player symbol span
+            if (!statusDisplay.querySelector('.player-symbol')) {
+                // Update the status display with game information
+                if (isRandomMatch) {
+                    statusDisplay.innerHTML = `Game in progress. Your symbol is <span class="player-symbol">(${playerSymbol})</span>`;
+                }
+            }
+            
+            // For random matches, set game as active right away
+            if (isRandomMatch) {
+                gameActive = true;
+                
+                // Enable clicking if it's your turn
+                if (playerSymbol === 'X') {  // X always goes first
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
+                
+                // Update player labels
+                updatePlayerLabels();
+            } else {
+                statusDisplay.innerHTML = 'Waiting for game to start...';
+            }
         });
     </script>
 </body>
