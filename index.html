@@ -1167,7 +1167,31 @@
                 clearInterval(countdownInterval);
                 socket.emit('cancelRandomMatch');
                 document.getElementById('matchFoundModal').style.display = 'none';
+                // Return to home screen to avoid broken match state
+                window.location.href = '/';
             });
+        });
+        
+        // Handle random match cancellation
+        socket.on('randomMatchCancelled', ({ message, cancelledBy, reason }) => {
+            // Clear any countdown interval if it exists
+            if (typeof countdownInterval !== 'undefined') {
+                clearInterval(countdownInterval);
+            }
+            
+            // Hide match found modal if it's showing
+            document.getElementById('matchFoundModal').style.display = 'none';
+            
+            // Hide matching animation if it's showing
+            matchingAnimation.style.display = 'none';
+            
+            // Show an alert with the cancellation message
+            alert(message || 'The match was cancelled.');
+            
+            // If we're not on the home page, redirect back
+            if (window.location.pathname !== '/') {
+                window.location.href = '/';
+            }
         });
         
         // Display available rooms

@@ -222,11 +222,42 @@ io.on('connection', (socket) => {
   
   // Cancel random match search
   socket.on('cancelRandomMatch', () => {
+    // First check if the player is in the queue
     const index = randomMatchQueue.findIndex(entry => entry.socketId === socket.id);
     if (index !== -1) {
       const player = randomMatchQueue[index];
       randomMatchQueue.splice(index, 1);
       console.log(`Player ${player.playerName} cancelled random match search`);
+    }
+    
+    // Also check if the player is already in a room but wants to cancel before game starts
+    if (socket.roomId) {
+      const roomId = socket.roomId;
+      const room = rooms[roomId];
+      
+      if (room && room.isRandomMatch && !room.gameStartedAt) {
+        console.log(`Player ${socket.id} cancelling random match in room ${roomId}`);
+        
+        // Find the player who wants to cancel
+        const player = room.players.find(p => p.id === socket.id);
+        const playerName = player ? player.name : 'A player';
+        
+        // Notify other players in the room
+        socket.to(roomId).emit('randomMatchCancelled', {
+          message: `${playerName} cancelled the match`,
+          cancelledBy: playerName,
+          roomId: roomId,
+          reason: 'cancelled'
+        });
+        
+        console.log(`Emitted randomMatchCancelled to room ${roomId} - cancelled by ${playerName}`);
+        
+        // Delete the room
+        delete rooms[roomId];
+        io.emit('availableRooms', Object.keys(rooms));
+        
+        console.log(`Room ${roomId} deleted after random match cancellation by ${playerName}`);
+      }
     }
   });
 
