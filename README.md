@@ -1,23 +1,31 @@
-# Online Multiplayer Tic-Tac-Toe
+# Tic-Tac-Toe Online
 
-A real-time multiplayer Tic-Tac-Toe game with rooms where players can create and join games from anywhere.
+A real-time multiplayer Tic-Tac-Toe game with Node.js, Express, and Socket.IO.
 
 ## Features
 
 - Create and join game rooms
 - Real-time gameplay with WebSockets
 - Room-based matchmaking system
+- Random matchmaking
+- Spectator mode
+- In-game chat
 - Score tracking
-- Beautiful UI with animations
 - Mobile-responsive design
 
-## How It Works
+## Project Structure
 
-1. Players can create a new game room or join an existing one
-2. Each room has a unique ID that can be shared with friends
-3. Real-time game updates using Socket.io
-4. Players take turns making moves
-5. Score tracking between matches
+```
+tic-tac-toe-online/
+├── server.js          # Main server file with all game logic
+├── index.html         # Home page
+├── game.html          # Game page
+├── waiting.html       # Waiting room page
+├── style.css          # CSS styling
+├── script.js          # Client-side JavaScript
+├── package.json       # Dependencies and scripts
+└── README.md          # This file
+```
 
 ## Installation
 
@@ -60,13 +68,6 @@ The server will start on http://localhost:3000 by default.
 - HTML5
 - CSS3
 - JavaScript
-
-## Project Structure
-
-- `server.js`: Main server file with Socket.io logic
-- `index.html`: Lobby page for creating/joining games
-- `game.html`: The actual game board
-- `style.css`: Styling for the game
 
 ## Deployment
 
