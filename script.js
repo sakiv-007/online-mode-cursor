@@ -8,12 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlayingAgainstAI = false;
     let scores = { X: 0, O: 0 };
     
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameType = urlParams.get('game') || 'tic-tac-toe';
+    const mode = urlParams.get('mode') || '';
+    
     // DOM elements
     const statusDisplay = document.getElementById('status');
     const gameModePopup = document.getElementById('gameModePopup');
     const playerNamesPopup = document.getElementById('playerNamesPopup');
     const playWithAIButton = document.getElementById('playWithAI');
     const playWithFriendButton = document.getElementById('playWithFriend');
+    const playOnlineButton = document.getElementById('playOnline');
+    const createRoomButton = document.getElementById('createRoom');
+    const joinRandomButton = document.getElementById('joinRandom');
     const startGameButton = document.getElementById('startGame');
     const player1NameInput = document.getElementById('player1Name');
     const player2NameInput = document.getElementById('player2Name');
@@ -25,6 +33,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerMessage = document.getElementById('winnerMessage');
     const closeBtn = document.querySelector('.close-btn');
     const board = document.getElementById('board');
+    
+    // Handle mode from URL parameters
+    if (mode === 'random') {
+        // Auto-join random game
+        window.location.href = `/online-mode/index.html?game=${gameType}&mode=random`;
+        return;
+    } else if (mode === 'create') {
+        // Auto-create room
+        window.location.href = `/online-mode/index.html?game=${gameType}&mode=create`;
+        return;
+    } else if (mode === 'ai') {
+        // Auto-start AI game
+        isPlayingAgainstAI = true;
+        playerXName = "Your";
+        playerOName = "AI";
+        gameModePopup.style.display = 'none';
+        
+        // Update score labels for AI mode
+        playerXLabel.textContent = "YOU X:";
+        playerOLabel.textContent = "AI O:";
+        
+        startGame();
+    }
     
     // Winning conditions
     const winningConditions = [
@@ -49,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerXLabel = document.getElementById('playerXLabel');
     const playerOLabel = document.getElementById('playerOLabel');
     
+    // Play with AI button
     playWithAIButton.addEventListener('click', () => {
         isPlayingAgainstAI = true;
         playerXName = "Your";
@@ -62,11 +94,36 @@ document.addEventListener('DOMContentLoaded', () => {
         startGame();
     });
     
+    // Play with friend button
     playWithFriendButton.addEventListener('click', () => {
         isPlayingAgainstAI = false;
         gameModePopup.style.display = 'none';
         playerNamesPopup.style.display = 'flex';
     });
+    
+    // Play online button
+    if (playOnlineButton) {
+        playOnlineButton.addEventListener('click', () => {
+            const onlineOptions = document.getElementById('onlineOptions');
+            if (onlineOptions) {
+                onlineOptions.style.display = 'flex';
+            }
+        });
+    }
+    
+    // Create room button
+    if (createRoomButton) {
+        createRoomButton.addEventListener('click', () => {
+            window.location.href = `/online-mode/index.html?game=${gameType}&mode=create`;
+        });
+    }
+    
+    // Join random button
+    if (joinRandomButton) {
+        joinRandomButton.addEventListener('click', () => {
+            window.location.href = `/online-mode/index.html?game=${gameType}&mode=random`;
+        });
+    }
     
     // Event listener for player names submission
     startGameButton.addEventListener('click', () => {

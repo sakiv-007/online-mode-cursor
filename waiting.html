@@ -787,9 +787,47 @@
                 height: 250px;
             }
         }
+        
+        .back-to-home {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .back-to-home a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(25, 24, 43, 0.8);
+            border-radius: 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(159, 124, 255, 0.3);
+        }
+        
+        .back-to-home a i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .back-to-home a:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(126, 87, 194, 0.4);
+        }
     </style>
 </head>
 <body>
+    <div class="back-to-home">
+        <a href="/" title="Return to BackbencherGames Homepage">
+            <i class="fas fa-home"></i> Back to Homepage
+        </a>
+    </div>
+    
     <div class="notification" id="notification">
         <i class="notification-icon fas fa-info-circle" id="notificationIcon"></i>
         <span class="notification-text" id="notificationText">Notification text</span>
@@ -1587,7 +1625,7 @@
             
             // Redirect to game page
             setTimeout(() => {
-                window.location.href = `/game/${roomId}`;
+                window.location.href = `/online-mode/game/${roomId}`;
             }, 1000);
         });
         

@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -8,43 +10,63 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Serve static files
-app.use(express.static(path.join(__dirname, '/')));
+// Serve static files for online-mode
+app.use('/online-mode', express.static(path.join(__dirname, '/')));
 
-// Routes
-app.get('/', (req, res) => {
+// Serve static files for the main site
+app.use(express.static(path.join(__dirname, '../')));
+
+// Routes for online-mode
+app.get('/online-mode', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Test route for directly accessing waiting room
-app.get('/test-waiting', (req, res) => {
+app.get('/online-mode/test-waiting', (req, res) => {
   res.sendFile(path.join(__dirname, 'test-waiting.html'));
 });
 
-// Test route for redirect debugging
-app.get('/test-redirect', (req, res) => {
+app.get('/online-mode/test-redirect', (req, res) => {
   res.sendFile(path.join(__dirname, 'test-redirect.html'));
 });
 
-// Route to serve game.html for both /game and /game/:roomId paths
-app.get('/game', (req, res) => {
+app.get('/online-mode/game', (req, res) => {
   res.sendFile(path.join(__dirname, 'game.html'));
 });
 
-app.get('/game/:roomId', (req, res) => {
+app.get('/online-mode/game/:roomId', (req, res) => {
   res.sendFile(path.join(__dirname, 'game.html'));
 });
 
-// Route to serve waiting room
-app.get('/waiting/:roomId', (req, res) => {
+app.get('/online-mode/waiting/:roomId', (req, res) => {
   console.log(`Serving waiting.html for room: ${req.params.roomId}`);
   res.sendFile(path.join(__dirname, 'waiting.html'));
 });
 
-// Fallback route to catch any waiting/ paths that were missed
-app.get('/waiting*', (req, res) => {
+app.get('/online-mode/waiting*', (req, res) => {
   console.log(`Fallback: Serving waiting.html for path: ${req.path}`);
   res.sendFile(path.join(__dirname, 'waiting.html'));
+});
+
+// Main site routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+// Game routes
+app.get('/games/:gameName', (req, res) => {
+  res.sendFile(path.join(__dirname, `../games/${req.params.gameName}`));
+});
+
+// Fallback route for any other pages in the site
+app.get('*', (req, res) => {
+  // Try to serve the requested file from the parent directory
+  const requestedPath = path.join(__dirname, '..', req.path);
+  res.sendFile(requestedPath, (err) => {
+    if (err) {
+      // If file not found, send the index page
+      res.sendFile(path.join(__dirname, '../index.html'));
+    }
+  });
 });
 
 // Game rooms data structure
@@ -60,7 +82,7 @@ const RoomStatus = {
 };
 
 // Debug route to see active rooms
-app.get('/rooms', (req, res) => {
+app.get('/online-mode/rooms', (req, res) => {
   const roomList = Object.keys(rooms).map(id => ({
     id,
     playerCount: rooms[id].players.length,

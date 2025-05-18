@@ -2,12 +2,13 @@
   "name": "tic-tac-toe-online",
   "version": "1.0.0",
   "description": "Online multiplayer Tic-Tac-Toe game",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
     "uuid": "^9.0.1"
@@ -15,4 +16,4 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
-} 
+}

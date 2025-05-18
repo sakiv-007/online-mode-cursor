@@ -723,7 +723,7 @@
             }
             
             #copyRoomId {
-                padding: 0.3rem 0.6rem;
+                padding: 0.3rem 0.5rem;
                 font-size: 0.8rem;
             }
         }
@@ -1006,9 +1006,79 @@
                 font-size: 0.8rem;
             }
         }
+
+        .back-to-home {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .back-to-home a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(25, 24, 43, 0.8);
+            border-radius: 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(159, 124, 255, 0.3);
+        }
+
+        .back-to-home a i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .back-to-home a:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(126, 87, 194, 0.4);
+        }
+
+        /* Add loading dots animation */
+        .loading-dots {
+            display: inline-block;
+            position: relative;
+        }
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(3, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% {
+                content: '.';
+            }
+            40%, 60% {
+                content: '..';
+            }
+            80%, 100% {
+                content: '...';
+            }
+        }
+
+        /* Add styles for clickable cells */
+        .clickable-cell {
+            cursor: pointer !important;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-cell:hover {
+            background-color: rgba(138, 79, 255, 0.15);
+            box-shadow: inset 0 0 15px rgba(138, 79, 255, 0.3);
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
+    <div class="back-to-home">
+        <a href="/" title="Return to BackbencherGames Homepage">
+            <i class="fas fa-home"></i> Back to Homepage
+        </a>
+    </div>
     <a href="/" class="home-btn" title="Back to Lobby">
         <i class="fas fa-home"></i>
     </a>
@@ -1189,7 +1259,7 @@
                     // Check if this is a random match (should bypass waiting room)
                     if (!isRandomMatch) {
                         console.log('Not a random match, redirecting to waiting room');
-                        window.location.href = `/waiting/${roomId}`;
+                        window.location.href = `/online-mode/waiting/${roomId}`;
                         return;
                     } else {
                         console.log('Random match, staying in game page');
@@ -1389,11 +1459,14 @@
             
             // Restart button event listener
             restartButton.addEventListener('click', () => {
-                if (roomId) {
-                    socket.emit('restartGame', roomId);
-                    console.log('Sending restart game request for room:', roomId);
-                    showNotification('info', 'Requested game restart...');
+                console.log('Restart button clicked');
+                
+                if (isSpectator) {
+                    showNotification('warning', 'Only players can restart the game');
+                    return;
                 }
+                
+                socket.emit('restartGame', roomId);
             });
             
             // Copy room ID button
@@ -1509,48 +1582,42 @@
             
             // Player joined event
             socket.on('playerJoined', ({ player }) => {
-                console.log(`Player joined event received:`, player);
+                console.log('Player joined:', player);
                 
-                if (player.name !== playerName) {
+                // Update opponent name if appropriate
+                if (player.symbol !== playerSymbol && (player.symbol === 'X' || player.symbol === 'O')) {
                     opponentName = player.name;
                     
-                    // Update player labels with opponent name
+                    // Update player labels
                     updatePlayerLabels();
                     
-                    // Update connection status
-                    updateConnectionStatus('connected');
-                    
-                    // Update player labels with names
-                    updatePlayerLabels();
-                    
-                    // Show joined notification
-                    showJoinedNotification(player.name);
-                    
-                    // Add system message to chat
-                    addChatMessage({
-                        message: `${player.name} joined as Player ${player.symbol}`,
-                        isSystem: true,
-                        timestamp: Date.now()
-                    });
-                }
-                
-                // Enable gameplay if not spectator
-                if (!isSpectator) {
-                    enableCellClicks();
-                    gameActive = true;
-                    
+                    // Update status display
                     updateStatusDisplay();
                 }
                 
-                // Also notify the server that we are connected
-                socket.emit('playerJoined', {
-                    player: {
-                        id: socket.id,
-                        name: playerName,
-                        symbol: playerSymbol,
-                        isSpectator
-                    }
+                // Update connection status
+                updateConnectionStatus('connected');
+                
+                // Show notification
+                showNotification('success', `${player.name} joined the game`);
+                
+                // Add system message to chat
+                addChatMessage({
+                    message: `${player.name} joined the game`,
+                    isSystem: true,
+                    timestamp: Date.now()
                 });
+                
+                // If game was paused due to disconnection, resume it
+                if (!gameActive && player.symbol) {
+                    gameActive = true;
+                    updateStatusDisplay();
+                    
+                    // Enable clicks if it's your turn
+                    if (currentPlayer === playerSymbol) {
+                        enableCellClicks();
+                    }
+                }
             });
             
             // Spectator joined event
@@ -1570,95 +1637,90 @@
             // Room joined event
             socket.on('roomJoined', (data) => {
                 console.log('Room joined data:', data);
+                
+                // Clear any loading messages immediately
+                statusDisplay.innerHTML = 'Setting up game...';
+                
+                // Process host status if provided
                 if (data.isHost !== undefined) {
                     isHost = data.isHost;
                     sessionStorage.setItem('isHost', isHost);
                     console.log('Host status updated:', isHost);
-                    updateHostControls(isHost);
                 }
                 
-                playerSymbol = data.playerSymbol;
-                gameState = data.gameState;
-                currentPlayer = data.currentPlayer;
-                scores = data.scores;
+                // Set core game data (with fallbacks for safety)
+                playerSymbol = data.playerSymbol || playerSymbol || 'X';
+                gameState = data.gameState || ["", "", "", "", "", "", "", "", ""];
+                currentPlayer = data.currentPlayer || "X";
+                scores = data.scores || { X: 0, O: 0 };
                 isSpectator = data.isSpectator || false;
-                participants = data.participants || [];
                 
-                console.log('Room joined! Game state:', gameState, 'Is spectator:', isSpectator);
-                updateParticipantCount();
-                
-                // Disable restart button for spectators
-                if (isSpectator) {
-                    restartButton.disabled = true;
-                    restartButton.style.opacity = '0.5';
-                    restartButton.style.cursor = 'not-allowed';
+                // Set participants data if available
+                if (data.participants && Array.isArray(data.participants)) {
+                    participants = data.participants;
+                    console.log('Setting participants:', participants);
+                } else if (data.players && Array.isArray(data.players)) {
+                    // Convert players to participants format if needed
+                    participants = data.players.map(p => ({
+                        id: p.id || '',
+                        name: p.name || '',
+                        symbol: p.symbol || '',
+                        connected: p.connected !== undefined ? p.connected : true,
+                        isSpectator: false
+                    }));
+                    console.log('Created participants from players:', participants);
                 }
                 
-                // Get opponent name
-                if (!isSpectator) {
-                    const opponent = data.players.find(p => p.symbol !== playerSymbol && (p.symbol === 'X' || p.symbol === 'O'));
-                    if (opponent) {
+                // CRITICAL: Always set game active
+                gameActive = true;
+                console.log('Game set to active state');
+                
+                // Get opponent information from participants
+                if (!isSpectator && participants.length > 0) {
+                    const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+                    const opponent = participants.find(p => p.symbol === opponentSymbol);
+                    if (opponent && opponent.name) {
                         opponentName = opponent.name;
+                        console.log('Found opponent:', opponentName);
+                    } else {
+                        opponentName = 'Opponent';
+                        console.log('Using default opponent name');
                     }
                 }
                 
-                // Update connection status
+                // Update UI elements
                 updateConnectionStatus('connected');
-                
-                // Update player labels
                 updatePlayerLabels();
-                
-                // Update score display
                 updateScoreDisplay();
                 
-                // Make sure the board is displayed
+                // Ensure board is visible
                 document.getElementById('board').style.display = 'grid';
                 
-                // Update board display
+                // Clear previous game markers
+                const existingLines = document.querySelectorAll('.winning-line');
+                existingLines.forEach(line => line.remove());
+                
+                // Update the game board with current state
                 updateBoardDisplay();
                 
-                // Enable gameplay if it's player's turn and not spectator
-                if (!isSpectator) {
-                    if (currentPlayer === playerSymbol) {
-                        enableCellClicks();
-                    } else {
-                        disableCellClicks();
-                    }
-                    gameActive = true;
-                } else {
-                    // Spectators can't click cells
+                // Update the game status message
+                if (currentPlayer === playerSymbol && !isSpectator) {
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                    enableCellClicks();
+                } else if (!isSpectator) {
+                    statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
                     disableCellClicks();
-                    statusDisplay.innerHTML = `Spectating: ${data.players.find(p => p.symbol === currentPlayer)?.name || currentPlayer}'s turn`;
+                } else {
+                    // For spectators
+                    const currentPlayerName = participants.find(p => p.symbol === currentPlayer)?.name || currentPlayer;
+                    statusDisplay.innerHTML = `Spectating: ${currentPlayerName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
                 }
                 
-                if (!isSpectator) {
-                    updateStatusDisplay();
-                }
+                // Show notification
+                showNotification('success', 'Connected to game!');
                 
-                // Add system message to chat on initial join
-                addChatMessage({
-                    message: `Welcome to Room ${roomId}! ${isSpectator ? 'You are spectating.' : ''}`,
-                    isSystem: true,
-                    timestamp: Date.now()
-                });
-                
-                // Show players in chat
-                data.players.forEach(player => {
-                    if (player.name !== playerName) {
-                        let roleText = '';
-                        if (player.symbol === 'X' || player.symbol === 'O') {
-                            roleText = `Player ${player.symbol}`;
-                        } else {
-                            roleText = 'Spectator';
-                        }
-                        
-                        addChatMessage({
-                            message: `${player.name} is ${roleText}`,
-                            isSystem: true,
-                            timestamp: Date.now()
-                        });
-                    }
-                });
+                // Call force initialization after a short delay for extra safety
+                setTimeout(forceGameInitialization, 500);
             });
             
             // Player left event
@@ -1883,30 +1945,81 @@
             function handleCellClick(cell) {
                 const cellIndex = parseInt(cell.getAttribute('data-cell-index'));
                 
-                if (gameState[cellIndex] !== '' || !gameActive || currentPlayer !== playerSymbol || isSpectator) {
+                console.log('Cell clicked:', cellIndex);
+                console.log('Game state:', {
+                    currentGameState: gameState[cellIndex],
+                    gameActive,
+                    currentPlayer,
+                    playerSymbol,
+                    isSpectator
+                });
+                
+                // Always force game to active state
+                gameActive = true;
+                
+                // Check if the move is valid
+                if (gameState[cellIndex] !== '' || currentPlayer !== playerSymbol || isSpectator) {
+                    console.log('Invalid move attempt - cell already filled or not your turn');
                     return;
                 }
+                
+                console.log('Valid move - sending to server');
+                
+                // Apply move locally for immediate feedback
+                cell.innerHTML = playerSymbol;
+                cell.classList.add(playerSymbol.toLowerCase());
                 
                 // Emit move to server
                 socket.emit('makeMove', { roomId, cellIndex });
                 
-                // Disable clicks until opponent's move
+                // Update status immediately
+                statusDisplay.innerHTML = `Waiting for ${opponentName || 'opponent'}'s move...`;
+                
+                // Disable all cell clicks until opponent's move
                 disableCellClicks();
             }
             
             // Update the status display
             function updateStatusDisplay() {
+                console.log('Updating status display. Game active:', gameActive, 'Current player:', currentPlayer, 'Player symbol:', playerSymbol);
+                
+                // Clear any "Waiting for..." messages
+                if (statusDisplay.textContent.includes('Waiting for') || statusDisplay.textContent.includes('Loading') || statusDisplay.textContent.includes('paused')) {
+                    console.log('Clearing waiting/paused status message');
+                }
+                
+                if (!gameActive) {
+                    console.log('WARNING: Game is marked as not active, setting it to active');
+                    gameActive = true;
+                }
+                
                 if (isSpectator) {
-                    const currentPlayerName = participants.find(p => p.symbol === currentPlayer)?.name || '';
+                    // For spectators, show whose turn it is
+                    const currentPlayerName = participants.find(p => p.symbol === currentPlayer)?.name || currentPlayer;
                     statusDisplay.innerHTML = `Spectating: ${currentPlayerName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
-                } else if (currentPlayer === playerSymbol) {
+                    return;
+                }
+                
+                const yourTurn = currentPlayer === playerSymbol;
+                
+                if (yourTurn) {
                     statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                    enableCellClicks();
                 } else {
-                    // Make sure we have a valid opponent name
-                    if (!opponentName || opponentName.trim() === '') {
-                        opponentName = 'Opponent';
+                    // Try to find opponent's name
+                    let playerName = opponentName || 'Opponent';
+                    
+                    // Look up opponent's name in participants
+                    if (!opponentName && participants.length > 0) {
+                        const opponent = participants.find(p => p.symbol === currentPlayer);
+                        if (opponent && opponent.name) {
+                            playerName = opponent.name;
+                            opponentName = opponent.name;
+                        }
                     }
-                    statusDisplay.innerHTML = `${opponentName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
+                    
+                    statusDisplay.innerHTML = `${playerName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
+                    disableCellClicks();
                 }
             }
             
@@ -1938,18 +2051,36 @@
             
             // Update player labels
             function updatePlayerLabels() {
+                console.log('Updating player labels with participants:', participants);
+                console.log('Current playerSymbol:', playerSymbol, 'opponentName:', opponentName);
+                
+                // Ensure participant data is valid
+                if (!Array.isArray(participants)) {
+                    console.error('Invalid participants data:', participants);
+                    participants = [];
+                }
+                
+                // Find players by their symbols
+                const xPlayer = participants.find(p => p.symbol === 'X');
+                const oPlayer = participants.find(p => p.symbol === 'O');
+                
+                // Get player names or use defaults
+                const playerX = xPlayer ? xPlayer.name : 'Player 1';
+                const playerO = oPlayer ? oPlayer.name : 'Player 2';
+                
+                console.log('Found playerX:', playerX, 'playerO:', playerO);
+                
                 if (isSpectator) {
-                    // Find player names for X and O
-                    const playerX = participants.find(p => p.symbol === 'X')?.name || 'Player X';
-                    const playerO = participants.find(p => p.symbol === 'O')?.name || 'Player O';
-                    
+                    // For spectators, show both player names
                     playerXLabel.textContent = `${playerX} X:`;
                     playerOLabel.textContent = `${playerO} O:`;
                 } else if (playerSymbol === 'X') {
+                    // For player X, show "You" and opponent name
                     playerXLabel.textContent = `You X:`;
-                    playerOLabel.textContent = `${opponentName} O:`;
+                    playerOLabel.textContent = `${playerO} O:`;
                 } else {
-                    playerXLabel.textContent = `${opponentName} X:`;
+                    // For player O, show opponent name and "You"
+                    playerXLabel.textContent = `${playerX} X:`;
                     playerOLabel.textContent = `You O:`;
                 }
             }
@@ -1962,30 +2093,60 @@
             
             // Update board display
             function updateBoardDisplay() {
+                console.log('Updating board display with gameState:', gameState);
+                
+                if (!gameState || !Array.isArray(gameState)) {
+                    console.error('Invalid gameState:', gameState);
+                    gameState = ["", "", "", "", "", "", "", "", ""];
+                }
+                
+                // First clear all cells
+                cells.forEach((cell, index) => {
+                    cell.innerHTML = '';
+                    cell.classList.remove('x', 'o', 'winning-cell');
+                });
+                
+                // Then apply the current game state
                 gameState.forEach((symbol, index) => {
-                    if (symbol) {
+                    if (symbol && (symbol === 'X' || symbol === 'O')) {
                         cells[index].innerHTML = symbol;
                         cells[index].classList.add(symbol.toLowerCase());
                     }
                 });
+                
+                // Make sure cells are clickable if it's the player's turn
+                if (gameActive && currentPlayer === playerSymbol && !isSpectator) {
+                    enableCellClicks();
+                } else {
+                    disableCellClicks();
+                }
             }
             
             // Enable cell clicks
             function enableCellClicks() {
-                if (isSpectator) return; // Spectators can't click
+                console.log('Enabling cell clicks for player', playerSymbol);
                 
-                cells.forEach(cell => {
-                    const index = parseInt(cell.getAttribute('data-cell-index'));
-                    if (gameState[index] === '') {
+                if (isSpectator) {
+                    console.log('Not enabling clicks for spectator');
+                    return;
+                }
+                
+                // Only enable empty cells
+                cells.forEach((cell, index) => {
+                    if (!gameState[index] || gameState[index] === '') {
                         cell.style.cursor = 'pointer';
+                        cell.classList.add('clickable-cell');
                     }
                 });
             }
             
             // Disable cell clicks
             function disableCellClicks() {
+                console.log('Disabling all cell clicks');
+                
                 cells.forEach(cell => {
                     cell.style.cursor = 'not-allowed';
+                    cell.classList.remove('clickable-cell');
                 });
             }
             
@@ -2069,6 +2230,11 @@
                 connectionStatus.textContent = 'Connected';
                 connectionStatus.className = 'connection-status status-connected';
                 connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                
+                // Clear the "Connecting to server..." message
+                if (statusDisplay.textContent === 'Connecting to server...') {
+                    statusDisplay.textContent = 'Waiting for game data...';
+                }
                 
                 // For random matches, immediately mark as connected
                 if (isRandomMatch) {
@@ -2170,6 +2336,84 @@
             } else {
                 statusDisplay.innerHTML = 'Waiting for game to start...';
             }
+
+            // Inside DOMContentLoaded event handler, after getting all DOM elements, add:
+            // Attach click handlers to all cells
+            cells.forEach(cell => {
+                cell.addEventListener('click', () => handleCellClick(cell));
+                console.log('Added click handler to cell', cell.getAttribute('data-cell-index'));
+            });
+
+            // Restart game
+            socket.on('gameRestarted', (data) => {
+                console.log('Game restarted:', data);
+                
+                // Update game state
+                gameState = data.gameState;
+                currentPlayer = data.currentPlayer;
+                gameActive = true;
+                
+                // Clear the board
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.classList.remove('x', 'o', 'winning-cell');
+                });
+                
+                // Clear any winning lines
+                const existingLines = document.querySelectorAll('.winning-line');
+                existingLines.forEach(line => line.remove());
+                
+                // Update status display
+                updateStatusDisplay();
+                
+                // Update board display
+                updateBoardDisplay();
+                
+                // Show notification
+                showNotification('success', 'Game restarted!');
+                
+                // Add system message to chat
+                addChatMessage({
+                    message: 'Game restarted!',
+                    isSystem: true,
+                    timestamp: Date.now()
+                });
+            });
+
+            // Force initialization of the game if it's not already active
+            function forceGameInitialization() {
+                console.log('Forcing game initialization');
+                
+                // Always set game to active
+                gameActive = true;
+                
+                // Force board display update
+                updateBoardDisplay();
+                
+                // Update status based on current player
+                if (currentPlayer === playerSymbol) {
+                    statusDisplay.innerHTML = `Your turn <span class="player-symbol">(${playerSymbol})</span>`;
+                    enableCellClicks();
+                } else {
+                    const opponentPlayerName = opponentName || 'Opponent';
+                    statusDisplay.innerHTML = `${opponentPlayerName}'s turn <span class="player-symbol">(${currentPlayer})</span>`;
+                    disableCellClicks();
+                }
+                
+                // Add message to notify user
+                showNotification('info', 'Game initialized. ' + (currentPlayer === playerSymbol ? 'Your turn!' : 'Waiting for opponent...'));
+            }
+
+            // Add this to the end of document.ready or at an appropriate place in your script
+            // Set a timer to force initialization after 2 seconds if game hasn't started
+            setTimeout(() => {
+                if (statusDisplay.textContent.includes('Loading') || 
+                    statusDisplay.textContent.includes('Waiting for game') ||
+                    statusDisplay.textContent.includes('paused')) {
+                    console.log('Game not initialized after timeout, forcing initialization');
+                    forceGameInitialization();
+                }
+            }, 2000);
         });
     </script>
 </body>

@@ -821,9 +821,83 @@
         }
         
         /* Animated gradient background */
+        .back-to-home {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .back-to-home a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(25, 24, 43, 0.8);
+            border-radius: 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(159, 124, 255, 0.3);
+        }
+        
+        .back-to-home a i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .back-to-home a:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(126, 87, 194, 0.4);
+        }
     </style>
+    
+    <script>
+        // Process URL parameters immediately to avoid showing wrong UI
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            const game = urlParams.get('game') || 'tic-tac-toe';
+            
+            // Handle different mode parameters
+            if (mode === 'create') {
+                // Auto-click the create room button
+                setTimeout(() => {
+                    const createRoomBtn = document.getElementById('create-room-btn');
+                    if (createRoomBtn) {
+                        createRoomBtn.click();
+                    }
+                }, 300);
+            } else if (mode === 'random') {
+                // Auto-click the find random match button
+                setTimeout(() => {
+                    const findRandomBtn = document.getElementById('find-random-btn');
+                    if (findRandomBtn) {
+                        findRandomBtn.click();
+                    }
+                }, 300);
+            }
+            
+            // Update title based on game type
+            document.title = game.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + ' Online';
+            
+            // Update any game-specific elements
+            const gameTitle = document.getElementById('game-title');
+            if (gameTitle) {
+                gameTitle.textContent = game.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + ' Online';
+            }
+        });
+    </script>
 </head>
 <body>
+    <div class="back-to-home">
+        <a href="/" title="Return to BackbencherGames Homepage">
+            <i class="fas fa-home"></i> Back to Homepage
+        </a>
+    </div>
+    
     <!-- Gaming background elements -->
     <div class="gaming-background">
         <div class="grid-lines"></div>
@@ -831,7 +905,7 @@
     </div>
 
     <div class="lobby-container">
-        <h1>Tic-Tac-Toe Online</h1>
+        <h1 id="game-title">Tic-Tac-Toe Online</h1>
         
         <div class="room-options">
             <div class="option-card" id="createRoomCard">
@@ -1081,11 +1155,11 @@
             
             // Redirect to waiting room or game page
             if (waitingRoom) {
-                console.log('Redirecting to waiting room:', `/waiting/${roomId}`);
-                window.location.href = `/waiting/${roomId}`;
+                console.log('Redirecting to waiting room:', `/online-mode/waiting/${roomId}`);
+                window.location.href = `/online-mode/waiting/${roomId}`;
             } else {
-                console.log('Redirecting to game (skipping waiting room):', `/game/${roomId}`);
-                window.location.href = `/game/${roomId}`;
+                console.log('Redirecting to game (skipping waiting room):', `/online-mode/game/${roomId}`);
+                window.location.href = `/online-mode/game/${roomId}`;
             }
         });
         
@@ -1102,9 +1176,9 @@
             
             // Redirect to waiting room or game page
             if (data.waitingRoom) {
-                window.location.href = `/waiting/${data.roomId}`;
+                window.location.href = `/online-mode/waiting/${data.roomId}`;
             } else {
-                window.location.href = `/game/${data.roomId}`;
+                window.location.href = `/online-mode/game/${data.roomId}`;
             }
         });
         
@@ -1169,7 +1243,7 @@
                     // Ensure match wasn't cancelled during the last second
                     if (!window.matchCancelled) {
                         // Always go directly to game page for random matches, bypass waiting room
-                        window.location.href = `/game/${roomId}`;
+                        window.location.href = `/online-mode/game/${roomId}`;
                     }
                 }
             }, 1000);
